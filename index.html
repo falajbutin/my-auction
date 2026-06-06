@@ -1,0 +1,4004 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="قعد الفلج">
+<meta name="theme-color" content="#f7f3ed">
+<meta name="mobile-web-app-capable" content="yes">
+<title>قعد فلج بطين</title>
+<link rel="manifest" href="manifest.json">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+/* ════════════════════════════════════════
+   🔥 Firebase Config — ضع إعداداتك هنا
+════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyB_cHC1q9K1PBRgzvpEc8jBoX7-UQqI9h4",
+  authDomain: "qad-falaj-app.firebaseapp.com",
+  databaseURL: "https://qad-falaj-app-default-rtdb.firebaseio.com",
+  projectId: "qad-falaj-app",
+  storageBucket: "qad-falaj-app.firebasestorage.app",
+  messagingSenderId: "337532287591",
+  appId: "1:337532287591:web:98aba3b224ba5a5149f2c2"
+};
+</script>
+<!-- html2pdf -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════
+   DESIGN TOKENS — Warm Ivory / Sage / Gold
+════════════════════════════════════════════════ */
+:root {
+  /* Base */
+  --ivory:       #f7f3ed;
+  --ivory-deep:  #ede7dc;
+  --ivory-border:#ddd5c8;
+  --parchment:   #f2ebe0;
+
+  /* Forest (sage-green, lighter) */
+  --sage:        #3a6b4a;
+  --sage-mid:    #4e8b62;
+  --sage-lt:     #7ab890;
+  --sage-pale:   #d4ead9;
+  --sage-ghost:  #eef6f0;
+
+  /* Accent Gold */
+  --gold:        #b8893a;
+  --gold-lt:     #e8c97a;
+  --gold-pale:   #fdf3dc;
+
+  /* Water */
+  --water:       #3a7fa8;
+  --water-lt:    #7bbdd8;
+  --water-pale:  #dff0f9;
+
+  /* Status */
+  --red:         #c0392b;
+  --red-pale:    #fde8e6;
+  --green:       #27ae60;
+
+  /* Text */
+  --text:        #1e2d22;
+  --text-mid:    #405548;
+  --text-muted:  #8a9e91;
+  --white:       #ffffff;
+
+  /* Surfaces */
+  --surface:     #ffffff;
+  --surface2:    #fbf8f4;
+  --border:      rgba(58,107,74,0.1);
+  --border-md:   rgba(58,107,74,0.18);
+
+  /* Shadows */
+  --sh-sm: 0 2px 10px rgba(30,45,34,0.07);
+  --sh:    0 6px 24px rgba(30,45,34,0.10);
+  --sh-lg: 0 12px 48px rgba(30,45,34,0.14);
+  --sh-xl: 0 24px 64px rgba(30,45,34,0.18);
+
+  /* Radii */
+  --r-xl: 26px;
+  --r-lg: 20px;
+  --r:    14px;
+  --r-sm: 10px;
+  --r-xs: 6px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Tajawal', sans-serif;
+  background: var(--ivory);
+  color: var(--text);
+  direction: rtl;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════ SCREENS ══════ */
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+.scroll-area {
+  flex: 1; overflow-y: auto; padding: 16px 16px 80px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ══════ SCROLLBAR ══════ */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: var(--ivory-border); border-radius: 4px; }
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--white);
+  padding: 12px 24px; border-radius: 40px;
+  font-size: 13px; font-weight: 700; z-index: 9999;
+  opacity: 0; pointer-events: none;
+  transition: all .35s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; max-width: 90vw;
+  box-shadow: var(--sh-xl);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.success { background: var(--sage); }
+#toast.error   { background: var(--red); }
+#toast.warn    { background: var(--gold); }
+
+/* ══════════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════════ */
+.top-bar {
+  height: 64px; background: rgba(247,243,237,0.95);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px; display: flex; align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 var(--border), var(--sh-sm);
+  flex-shrink: 0;
+}
+.top-bar-brand { display: flex; align-items: center; gap: 11px; }
+.top-bar-logo {
+  width: 40px; height: 40px; border-radius: 13px; overflow: hidden;
+  border: 1.5px solid var(--border-md); flex-shrink: 0;
+  box-shadow: var(--sh-sm);
+}
+.top-bar-logo img { width: 100%; height: 100%; object-fit: cover; }
+.top-bar-title { font-size: 15px; font-weight: 800; color: var(--sage); }
+.top-bar-sub { font-size: 10px; color: var(--text-muted); }
+.top-bar-action {
+  background: var(--surface2); border: 1.5px solid var(--border-md);
+  color: var(--text-mid); border-radius: var(--r-sm);
+  padding: 7px 14px; font-family: 'Tajawal', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: .2s; letter-spacing: .2px;
+}
+.top-bar-action:active { background: var(--ivory-deep); transform: scale(.97); }
+
+/* ══════════════════════════════════════════
+   SPLASH SCREEN
+══════════════════════════════════════════ */
+#screen-splash {
+  align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 40% 30%, rgba(122,184,144,0.18) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(184,137,58,0.12) 0%, transparent 60%),
+              var(--ivory);
+}
+.splash-icon {
+  width: 120px; height: 120px; border-radius: 32px; overflow: hidden;
+  box-shadow: 0 0 0 8px rgba(58,107,74,0.08), var(--sh-xl);
+  margin-bottom: 28px; animation: splashIn .7s cubic-bezier(.34,1.56,.64,1) both;
+}
+.splash-icon img { width: 100%; height: 100%; object-fit: cover; }
+.splash-icon-fallback {
+  width: 120px; height: 120px; border-radius: 32px;
+  background: linear-gradient(135deg, var(--sage-pale), var(--sage-ghost));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px; margin-bottom: 28px;
+  box-shadow: 0 0 0 8px rgba(58,107,74,0.08), var(--sh-xl);
+  animation: splashIn .7s cubic-bezier(.34,1.56,.64,1) both;
+}
+.splash-name {
+  font-family: 'Scheherazade New', serif;
+  font-size: 38px; font-weight: 700; color: var(--sage);
+  animation: fadeUp .6s .15s ease both; text-align: center;
+  letter-spacing: .5px; line-height: 1.2;
+}
+.splash-tagline {
+  font-size: 13px; color: var(--text-muted); margin-top: 10px;
+  animation: fadeUp .6s .25s ease both; text-align: center;
+  font-weight: 500; letter-spacing: .3px;
+}
+.splash-loader {
+  display: flex; gap: 8px; margin-top: 52px;
+  animation: fadeUp .6s .4s ease both;
+}
+.splash-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--sage-lt);
+  animation: dotBounce 1.3s infinite ease-in-out;
+}
+.splash-dot:nth-child(2) { animation-delay: .2s; background: var(--gold-lt); }
+.splash-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes dotBounce { 0%,80%,100%{transform:scale(.5);opacity:.3} 40%{transform:scale(1.2);opacity:1} }
+@keyframes splashIn { from{opacity:0;transform:scale(.8) translateY(20px)} to{opacity:1;transform:none} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+/* ══════════════════════════════════════════
+   ROLE SELECTION
+══════════════════════════════════════════ */
+#screen-role {
+  background: radial-gradient(ellipse at 25% 15%, rgba(122,184,144,0.15) 0%, transparent 55%),
+              radial-gradient(ellipse at 80% 85%, rgba(184,137,58,0.1) 0%, transparent 55%),
+              var(--ivory);
+}
+.role-body {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 22px; gap: 14px;
+}
+.role-header { text-align: center; margin-bottom: 16px; }
+.role-header .greeting {
+  font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px;
+}
+.role-header h1 {
+  font-size: 30px; font-weight: 900; color: var(--sage);
+  line-height: 1.2; letter-spacing: -.3px;
+}
+.role-header p { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+
+.role-card {
+  width: 100%; max-width: 360px;
+  background: var(--surface); border-radius: var(--r-xl);
+  padding: 22px; display: flex; align-items: center; gap: 18px;
+  cursor: pointer; border: 1.5px solid var(--border);
+  box-shadow: var(--sh); transition: .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: right; position: relative; overflow: hidden;
+}
+.role-card::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: 0; transition: .2s;
+}
+.role-card.bidder::before { background: linear-gradient(135deg, rgba(122,184,144,0.06), transparent); }
+.role-card.admin::before  { background: linear-gradient(135deg, rgba(59,127,168,0.06), transparent); }
+.role-card:active { transform: scale(.97); box-shadow: var(--sh-sm); }
+.role-card:active::before { opacity: 1; }
+
+.role-icon {
+  width: 56px; height: 56px; border-radius: 17px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.role-icon.bidder { background: linear-gradient(135deg, #d4ead9, #a8d8b4); }
+.role-icon.admin  { background: linear-gradient(135deg, #dff0f9, #a0cfe8); }
+.role-card h3 { font-size: 16px; font-weight: 800; color: var(--text); }
+.role-card p  { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+.role-arrow   { margin-right: auto; color: var(--ivory-border); font-size: 20px; }
+
+.role-divider {
+  font-size: 12px; color: var(--text-muted);
+  display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px;
+}
+.role-divider::before,.role-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ══════════════════════════════════════════
+   CARDS & FIELDS
+══════════════════════════════════════════ */
+.card {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 20px; box-shadow: var(--sh-sm);
+  border: 1px solid var(--border); margin-bottom: 14px;
+}
+.card-title {
+  font-size: 14px; font-weight: 800; color: var(--sage);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.field { margin-bottom: 14px; }
+.field-label {
+  display: block; font-size: 12px; font-weight: 700;
+  color: var(--text-mid); margin-bottom: 6px; letter-spacing: .2px;
+}
+.field-input {
+  width: 100%; padding: 13px 15px;
+  border: 1.5px solid var(--ivory-border);
+  border-radius: var(--r); background: var(--surface2);
+  font-family: 'Tajawal', sans-serif; font-size: 15px;
+  color: var(--text); transition: .2s; outline: none;
+  -webkit-appearance: none;
+}
+.field-input:focus {
+  border-color: var(--sage-mid);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(78,139,98,0.1);
+}
+.field-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+select.field-input { cursor: pointer; }
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
+.btn {
+  width: 100%; padding: 15px; border: none; border-radius: var(--r);
+  cursor: pointer; font-family: 'Tajawal', sans-serif;
+  font-size: 15px; font-weight: 800; transition: .2s;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; letter-spacing: .2px;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+
+.btn-sage    { background: var(--sage); color: var(--white); box-shadow: 0 4px 14px rgba(58,107,74,0.3); }
+.btn-sage:active { background: var(--sage-mid); }
+.btn-water   { background: var(--water); color: var(--white); box-shadow: 0 4px 14px rgba(58,127,168,0.3); }
+.btn-gold    { background: var(--gold); color: var(--white); box-shadow: 0 4px 14px rgba(184,137,58,0.3); }
+.btn-red     { background: var(--red); color: var(--white); box-shadow: 0 4px 14px rgba(192,57,43,0.25); }
+.btn-ghost   { background: transparent; color: var(--text-mid); border: 1.5px solid var(--border-md); box-shadow: none; }
+.btn-ghost:active { background: var(--ivory-deep); }
+.btn-whatsapp { background: #22c55e; color: white; box-shadow: 0 4px 14px rgba(34,197,94,0.3); }
+.btn-sm { padding: 9px 16px; font-size: 13px; width: auto; border-radius: var(--r-sm); }
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ══════════════════════════════════════════
+   LOGIN SCREENS
+══════════════════════════════════════════ */
+.login-body {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; padding: 24px;
+}
+.login-card {
+  background: var(--surface); border-radius: var(--r-xl);
+  padding: 30px; box-shadow: var(--sh); border: 1px solid var(--border);
+  max-width: 400px; margin: 0 auto; width: 100%;
+}
+.login-hero { text-align: center; margin-bottom: 24px; }
+.login-icon { font-size: 48px; margin-bottom: 12px; }
+.login-title { font-size: 22px; font-weight: 900; color: var(--sage); margin-bottom: 5px; }
+.login-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+/* ══════════════════════════════════════════
+   AUCTION HERO
+══════════════════════════════════════════ */
+.auction-hero {
+  background: linear-gradient(150deg, var(--sage) 0%, #2a5438 60%, #1e3d28 100%);
+  border-radius: var(--r-xl); padding: 28px 22px;
+  margin-bottom: 14px; color: var(--white); text-align: center;
+  position: relative; overflow: hidden; box-shadow: var(--sh-lg);
+}
+.auction-hero::before {
+  content: ''; position: absolute;
+  top: -50px; right: -50px; width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.auction-hero::after {
+  content: ''; position: absolute;
+  bottom: -40px; left: -30px; width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(184,137,58,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-plot-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: rgba(255,255,255,.55);
+  text-transform: uppercase; letter-spacing: 1px;
+  background: rgba(255,255,255,0.08); padding: 4px 12px;
+  border-radius: 20px; margin-bottom: 8px;
+}
+.hero-plot-name {
+  font-size: 22px; font-weight: 900; color: var(--white);
+  margin-bottom: 20px; letter-spacing: .2px;
+}
+.hero-bid-label { font-size: 11px; color: rgba(255,255,255,.5); letter-spacing: .5px; margin-bottom: 4px; }
+.hero-amount {
+  font-size: 54px; font-weight: 900; color: var(--gold-lt);
+  line-height: 1; font-family: 'Tajawal', sans-serif;
+  letter-spacing: -2px; transition: transform .3s, color .3s;
+}
+.hero-currency { font-size: 14px; color: rgba(255,255,255,.4); font-weight: 600; margin-top: 2px; }
+.hero-bidder { font-size: 13px; color: rgba(255,255,255,.65); margin-top: 10px; }
+.hero-bidder strong { color: var(--white); font-weight: 800; }
+.hero-min-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 4px 12px; margin-top: 8px;
+  background: rgba(255,255,255,0.1); border-radius: 20px;
+  color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,0.12);
+}
+.hero-timer {
+  font-size: 36px; font-weight: 900;
+  letter-spacing: 3px; margin: 16px 0 10px;
+  color: var(--white); font-family: 'Tajawal', sans-serif;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.hero-timer.urgent { color: #ffb3b3; animation: urgentBlink .5s infinite; }
+@keyframes urgentBlink { 50% { opacity: .35; } }
+
+.hero-status { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 40px; font-size: 11px; font-weight: 700;
+}
+.pill-live  { background: rgba(122,184,144,0.2); color: #a8e6b4; border: 1px solid rgba(122,184,144,0.3); }
+.pill-ended { background: rgba(255,160,160,0.15); color: #ffcdd2; border: 1px solid rgba(255,160,160,0.2); }
+.pill-wait  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.12); }
+.live-dot   { width: 7px; height: 7px; border-radius: 50%; background: #7ab890; animation: livePulse 1.2s infinite; }
+@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+
+.bump { animation: bumpAnim .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes bumpAnim { 0%{transform:scale(1)} 40%{transform:scale(1.13)} 100%{transform:scale(1)} }
+
+/* ══════════════════════════════════════════
+   WINNER CARD
+══════════════════════════════════════════ */
+.winner-card {
+  background: linear-gradient(135deg, #fffdf5, #fef7e0);
+  border: 2px solid rgba(232,201,122,0.4);
+  border-radius: var(--r-xl); padding: 24px;
+  text-align: center; margin-bottom: 14px;
+  box-shadow: 0 6px 28px rgba(184,137,58,0.15);
+  display: none; animation: winnerIn .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes winnerIn { from{opacity:0;transform:scale(.9) translateY(10px)} to{opacity:1;transform:none} }
+.winner-trophy { font-size: 52px; margin-bottom: 10px; }
+.winner-label  { font-size: 11px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+.winner-name   { font-size: 24px; font-weight: 900; color: var(--text); margin-top: 8px; }
+.winner-phone  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.winner-amt    {
+  font-size: 32px; font-weight: 900; color: var(--sage);
+  margin-top: 10px; font-family: 'Tajawal', sans-serif;
+}
+
+/* ══════════════════════════════════════════
+   QUICK BID GRID
+══════════════════════════════════════════ */
+.quick-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 14px; }
+.quick-btn {
+  padding: 14px 8px; border-radius: var(--r); font-family: 'Tajawal', sans-serif;
+  font-size: 15px; font-weight: 800; cursor: pointer; transition: .18s;
+  background: var(--sage-ghost); color: var(--sage);
+  border: 1.5px solid rgba(58,107,74,0.15);
+}
+.quick-btn:active { background: var(--sage-pale); transform: scale(.96); }
+
+.divider-or {
+  text-align: center; font-size: 12px; color: var(--text-muted);
+  margin: 12px 0; position: relative;
+}
+.divider-or::before,.divider-or::after {
+  content: ''; position: absolute; top: 50%; width: 40%; height: 1px;
+  background: var(--border);
+}
+.divider-or::before { right: 0; } .divider-or::after { left: 0; }
+
+/* ══════════════════════════════════════════
+   ATTENDANCE LIST
+══════════════════════════════════════════ */
+.att-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.att-count-badge {
+  background: var(--sage); color: var(--white); border-radius: 20px;
+  padding: 3px 12px; font-size: 12px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(58,107,74,0.2);
+}
+.att-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.att-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; background: var(--surface2);
+  border-radius: var(--r); border: 1px solid var(--border);
+  transition: .15s;
+}
+.att-avatar {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: linear-gradient(135deg, var(--sage-lt), var(--sage-mid));
+  color: var(--white); font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.att-name  { font-size: 13px; font-weight: 800; color: var(--text); }
+.att-phone { font-size: 11px; color: var(--text-muted); }
+.att-time  { font-size: 11px; color: var(--text-muted); margin-right: auto; }
+.att-live  { font-size: 10px; font-weight: 700; color: var(--sage-mid); background: var(--sage-pale); padding: 2px 9px; border-radius: 10px; }
+.empty-state { text-align: center; color: var(--text-muted); font-size: 13px; padding: 24px; }
+
+/* ══════════════════════════════════════════
+   ADMIN TABS
+══════════════════════════════════════════ */
+.tab-bar {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 64px; z-index: 90;
+  box-shadow: 0 2px 8px rgba(30,45,34,0.06);
+}
+.tab-btn {
+  padding: 12px 4px; border: none; background: transparent;
+  cursor: pointer; font-family: 'Tajawal', sans-serif;
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  border-bottom: 2.5px solid transparent; transition: .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.tab-btn.active { color: var(--sage); border-bottom-color: var(--sage); }
+.tab-icon { font-size: 18px; }
+
+/* ══════════════════════════════════════════
+   ADMIN SECTIONS
+══════════════════════════════════════════ */
+.admin-section {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 20px; margin-bottom: 14px;
+  border: 1px solid var(--border); box-shadow: var(--sh-sm);
+}
+.admin-section-title {
+  font-size: 13px; font-weight: 800; color: var(--sage);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px; }
+
+/* ══════════════════════════════════════════
+   BIDDER LIST ITEMS
+══════════════════════════════════════════ */
+.bidder-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px; background: var(--surface2);
+  border-radius: var(--r); margin-bottom: 9px;
+  border: 1px solid var(--border); transition: .15s;
+}
+.bidder-avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--water-pale), var(--water-lt));
+  color: var(--water); font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.bidder-name  { font-size: 13px; font-weight: 800; color: var(--text); }
+.bidder-phone { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.bidder-edit   { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 17px; padding: 5px; }
+.bidder-delete { background: none; border: none; cursor: pointer; color: var(--red); font-size: 17px; padding: 5px; }
+.bidder-actions { margin-right: auto; display: flex; gap: 2px; }
+
+/* ══════════════════════════════════════════
+   PENDING REQUESTS
+══════════════════════════════════════════ */
+.pending-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px;
+  background: var(--gold-pale); border-radius: var(--r);
+  margin-bottom: 9px; border-right: 3px solid var(--gold);
+}
+.pending-info { flex: 1; }
+.pending-name  { font-size: 13px; font-weight: 800; color: var(--text); }
+.pending-phone { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.pending-actions { display: flex; gap: 6px; margin-top: 10px; }
+.count-badge {
+  background: var(--red); color: var(--white); border-radius: 50%;
+  width: 20px; height: 20px; font-size: 11px;
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 800;
+}
+
+/* ══════════════════════════════════════════
+   FINANCE TABLE
+══════════════════════════════════════════ */
+.fin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.fin-table th {
+  background: var(--sage-ghost); padding: 10px 8px;
+  font-weight: 800; color: var(--sage); text-align: center;
+  font-size: 11px; letter-spacing: .2px;
+}
+.fin-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: center; }
+.fin-table tr:last-child td { border-bottom: none; }
+.fin-table tr:hover td { background: var(--surface2); }
+.fin-paid-input {
+  width: 70px; padding: 5px 7px; border: 1.5px solid var(--border-md);
+  border-radius: var(--r-xs); text-align: center;
+  font-family: 'Tajawal', sans-serif; font-size: 12px;
+  background: var(--surface2); color: var(--text); outline: none;
+  transition: .15s;
+}
+.fin-paid-input:focus { border-color: var(--sage-mid); background: var(--white); }
+.fin-rem-pos  { color: var(--red); font-weight: 800; }
+.fin-rem-zero { color: var(--sage-lt); font-weight: 800; }
+.fin-summary {
+  font-size: 14px; font-weight: 800; color: var(--sage);
+  padding: 13px 16px; background: var(--sage-pale);
+  border-radius: var(--r); margin-top: 12px;
+  border: 1px solid rgba(58,107,74,0.12);
+}
+
+/* ══════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,25,18,0.55); z-index: 1000;
+  align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); border-radius: var(--r-xl);
+  padding: 30px; width: 100%; max-width: 380px;
+  box-shadow: var(--sh-xl); animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn { from{opacity:0;transform:scale(.9) translateY(15px)} to{opacity:1;transform:none} }
+.modal-title { font-size: 18px; font-weight: 900; color: var(--sage); margin-bottom: 8px; }
+.modal-msg   { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.7; }
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.modal-icon  { font-size: 44px; text-align: center; margin-bottom: 14px; }
+
+/* ══════════════════════════════════════════
+   OTP INPUT
+══════════════════════════════════════════ */
+.otp-input {
+  width: 80%; padding: 16px; font-size: 28px; text-align: center;
+  letter-spacing: 12px; border: 2px solid var(--border-md);
+  border-radius: var(--r); font-family: 'Tajawal', sans-serif;
+  background: var(--surface2); color: var(--text);
+  margin: 0 auto 20px; display: block; outline: none; transition: .2s;
+}
+.otp-input:focus { border-color: var(--sage-mid); background: var(--white); box-shadow: 0 0 0 4px rgba(78,139,98,0.1); }
+
+/* ══════════════════════════════════════════
+   HISTORY BID LIST
+══════════════════════════════════════════ */
+.hist-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.hist-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; background: var(--surface2);
+  border-radius: var(--r); border: 1px solid var(--border);
+}
+.hist-rank   { font-size: 20px; flex-shrink: 0; }
+.hist-name   { font-size: 13px; font-weight: 800; color: var(--text); }
+.hist-phone  { font-size: 11px; color: var(--text-muted); }
+.hist-time   { font-size: 11px; color: var(--text-muted); margin-right: auto; }
+.hist-amount { font-size: 14px; font-weight: 900; color: var(--sage); }
+
+/* ══════════════════════════════════════════
+   MISC
+══════════════════════════════════════════ */
+.date-chip {
+  font-size: 10px; color: var(--text-muted);
+  background: var(--ivory-deep); padding: 4px 10px;
+  border-radius: 20px; font-weight: 600;
+}
+.setting-row { display: flex; gap: 10px; }
+.setting-row .field-input { flex: 1; }
+.about-body { font-size: 13px; color: var(--text-mid); line-height: 1.9; margin-top: 10px; }
+.about-author { font-size: 12px; color: var(--text-muted); margin-top: 16px; font-weight: 600; }
+.online-badge { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-left: 4px; }
+
+/* Safe area for iOS */
+.scroll-area { padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 20px)); }
+
+/* ══════════════════════════════════════════
+   ASSISTANT BADGE & PERMISSIONS
+══════════════════════════════════════════ */
+.assistant-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background: linear-gradient(135deg,#dff0f9,#a0cfe8);
+  color: var(--water); border-radius:20px;
+  padding:3px 12px; font-size:11px; font-weight:800;
+  border:1.5px solid rgba(58,127,168,0.25);
+}
+.perm-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;
+}
+.perm-item {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--surface2); border-radius:var(--r-sm);
+  padding:10px 14px; border:1px solid var(--border);
+}
+.perm-label { font-size:12px; font-weight:700; color:var(--text-mid); }
+/* Toggle switch */
+.toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position:absolute; inset:0; background:var(--ivory-border);
+  border-radius:22px; cursor:pointer; transition:.3s;
+}
+.toggle-slider::before {
+  content:''; position:absolute; width:16px; height:16px;
+  left:3px; top:3px; background:var(--white);
+  border-radius:50%; transition:.3s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle input:checked + .toggle-slider { background:var(--sage); }
+.toggle input:checked + .toggle-slider::before { transform:translateX(18px); }
+
+/* ══════════════════════════════════════════
+   ANNUAL RECORDS TAB
+══════════════════════════════════════════ */
+.year-block { margin-bottom:18px; }
+.year-header {
+  display:flex; align-items:center; justify-content:space-between;
+  background: linear-gradient(135deg, var(--sage), var(--sage-mid));
+  color:var(--white); border-radius:var(--r); padding:12px 16px;
+  cursor:pointer; user-select:none; margin-bottom:0;
+}
+.year-title { font-size:15px; font-weight:900; }
+.year-total { font-size:13px; font-weight:700; opacity:.85; }
+.year-arrow { font-size:16px; transition:.3s; }
+.year-arrow.open { transform:rotate(90deg); }
+.year-body { overflow:hidden; }
+.year-body.collapsed { display:none; }
+.annual-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:2px; }
+.annual-table th {
+  background:var(--sage-ghost); padding:9px 10px;
+  font-weight:800; color:var(--sage); text-align:center; font-size:11px;
+}
+.annual-table td {
+  padding:9px 10px; border-bottom:1px solid var(--border);
+  text-align:center; color:var(--text);
+}
+.annual-table tr:last-child td { border-bottom:none; }
+.annual-table tr:hover td { background:var(--surface2); }
+.annual-total-row td {
+  background:var(--sage-pale); font-weight:900;
+  color:var(--sage); border-top:2px solid var(--sage-lt);
+}
+
+/* ══════════════════════════════════════════
+   TOGGLE CARD BUTTON
+══════════════════════════════════════════ */
+.toggle-card-btn {
+  background:var(--surface2); border:1.5px solid var(--border-md);
+  color:var(--text-mid); border-radius:var(--r-sm); padding:5px 12px;
+  font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700;
+  cursor:pointer; transition:.2s; white-space:nowrap; flex-shrink:0;
+}
+.toggle-card-btn:hover { background:var(--sage-pale); border-color:var(--sage-lt); color:var(--sage); }
+
+/* ══════════════════════════════════════════
+   MANUAL ENTRY MODAL
+══════════════════════════════════════════ */
+.tab-bar { grid-template-columns: repeat(6,1fr); }
+.tab-btn { font-size:9px; }
+</style>
+</head>
+<body>
+
+<!-- ████ TOAST ████ -->
+<div id="toast"></div>
+
+<!-- ████ MODALS ████ -->
+
+<!-- About -->
+<div class="modal-overlay" id="modal-about">
+  <div class="modal-box">
+    <div class="modal-icon">🌴</div>
+    <div class="modal-title" style="text-align:center">المزايدة على قعد فلج بطين</div>
+    <div class="about-body">
+      <strong>منصة المزايدة الإلكترونية لربوع فلج بطين</strong><br><br>
+      نظام مزايدة مخصّص لقعد ربوع فلج قرية بطين، تُعقد المزايدة خلال يومي الإثنين والخميس أو متى دعت الحاجة. يهدف التطبيق إلى تنظيم المزايدة بأسلوب سهل، منظّم وشفاف.
+      <div class="about-author">حمد بن راشد اليزيدي — وكيل الفلج</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-about')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">إعادة ضبط المزاد</div>
+    <div class="modal-msg">سيتم حذف جميع المزايدات الحالية. هل أنت متأكد؟</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reset')">إلغاء</button>
+      <button class="btn btn-red" onclick="adminReset();closeModal('modal-reset')">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Bidder -->
+<div class="modal-overlay" id="modal-edit-bidder">
+  <div class="modal-box">
+    <div class="modal-title">✏️ تعديل بيانات المزايد</div>
+    <input type="hidden" id="edit-bidder-key">
+    <div class="field">
+      <label class="field-label">الاسم الكامل</label>
+      <input class="field-input" id="edit-bidder-name" type="text">
+    </div>
+    <div class="field">
+      <label class="field-label">رقم الهاتف</label>
+      <input class="field-input" id="edit-bidder-phone" type="tel" dir="ltr">
+    </div>
+    <div class="field">
+      <label class="field-label">مفتاح الدخول</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="field-input" id="edit-bidder-key-val" type="text" dir="ltr" style="flex:1">
+        <button class="btn btn-sage btn-sm" onclick="generateNewKeyForEdit()">توليد جديد</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-bidder')">إلغاء</button>
+      <button class="btn btn-water" onclick="saveEditBidder()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title" id="confirm-title">تأكيد</div>
+    <div class="modal-msg" id="confirm-msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn btn-sage" id="confirm-yes">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Register New Bidder -->
+<div class="modal-overlay" id="modal-register">
+  <div class="modal-box" style="text-align:center">
+    <div class="modal-icon">📝</div>
+    <div class="modal-title">تسجيل مزايد جديد</div>
+    <div class="modal-msg">رقمك غير مسجّل في المنصة، أدخل اسمك الكامل لطلب التسجيل.</div>
+    <div class="field" style="text-align:right">
+      <label class="field-label">الاسم الثلاثي + القبيلة</label>
+      <input class="field-input" id="new-name" type="text" placeholder="اسمك الكامل">
+    </div>
+    <button class="btn btn-sage" onclick="submitNewBidder()" style="margin-top:6px">✅ إرسال طلب التسجيل</button>
+    <div class="modal-actions" style="margin-top:10px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-register')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Show Login Key after registration -->
+<div class="modal-overlay" id="modal-login-key">
+  <div class="modal-box" style="text-align:center">
+    <div class="modal-icon">🔑</div>
+    <div class="modal-title">تم إنشاء حسابك!</div>
+    <div class="modal-msg">
+      مفتاح الدخول الخاص بك:
+      <br><br>
+      <strong style="font-size:30px;color:var(--sage);letter-spacing:4px;font-family:'Tajawal',sans-serif" id="generated-key">——</strong>
+      <br><br>
+      <span style="color:var(--red);font-weight:700">⚠️ احفظ هذا الرقم جيداً لإستخدامه لدخول المزايدة - لن يظهر مرة أخرى</span>
+    </div>
+    <button class="btn btn-whatsapp" id="whatsapp-send-btn" style="margin-bottom:10px">
+      📱 إرسال عبر الواتساب
+    </button>
+    <div class="modal-actions">
+      <button class="btn btn-sage" id="confirm-key-btn">✅ تم الحفظ — دخول</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enter Login Key -->
+<div class="modal-overlay" id="modal-enter-key">
+  <div class="modal-box" style="text-align:center">
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title" id="enter-key-title">أدخل مفتاح الدخول</div>
+    <div class="modal-msg" id="enter-key-msg">هذا الرقم مسجّل من قبل. أدخل مفتاح الدخول للمتابعة.</div>
+    <input class="otp-input" id="login-key-input" type="tel" inputmode="numeric"
+      pattern="[0-9]*" placeholder="••••••" maxlength="8"
+      onkeydown="if(event.key==='Enter')submitLoginKey()">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-enter-key')">إلغاء</button>
+      <button class="btn btn-sage" onclick="submitLoginKey()">دخول ←</button>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-sm btn-ghost" onclick="requestResetKey()">🔄 طلب مفتاح جديد</button>
+    </div>
+  </div>
+</div>
+
+<!-- OTP (WhatsApp code) -->
+<div class="modal-overlay" id="modal-otp">
+  <div class="modal-box" style="text-align:center">
+    <div class="modal-icon">💬</div>
+    <div class="modal-title">أدخل رمز التحقق</div>
+    <div class="modal-msg">أرسل رسالة الواتساب للإدارة، ثم أدخل الرمز الذي سيُرسل إليك.</div>
+    <input class="otp-input" id="otp-input" type="tel" inputmode="numeric" maxlength="4" placeholder="····">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeOTPModal()">إلغاء</button>
+      <button class="btn btn-sage" onclick="verifyEnteredCode()">تحقق</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Day -->
+<div class="modal-overlay" id="modal-newday">
+  <div class="modal-box">
+    <div class="modal-icon">🗓️</div>
+    <div class="modal-title">بدء يوم مزايدة جديد</div>
+    <div class="modal-msg">سيتم تصفير بيانات الحضور وإعادة ترتيب الربوع، مع الاحتفاظ بالمزايدين الفائزين في السجلات المالية.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-newday')">إلغاء</button>
+      <button class="btn btn-red" onclick="adminNewDay();closeModal('modal-newday')">نعم، ابدأ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Items Modal -->
+<div class="modal-overlay" id="modal-add-item">
+  <div class="modal-box">
+    <div class="modal-title">➕ إضافة ربع جديد</div>
+    <div class="field">
+      <label class="field-label">اسم الربع</label>
+      <input class="field-input" id="new-item-name" type="text" placeholder="مثال: الربع الأول">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-item')">إلغاء</button>
+      <button class="btn btn-sage" onclick="addItem()">إضافة</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="modal-edit-item">
+  <div class="modal-box">
+    <div class="modal-title">✏️ تعديل اسم الربع</div>
+    <input type="hidden" id="edit-item-key">
+    <div class="field">
+      <label class="field-label">اسم الربع</label>
+      <input class="field-input" id="edit-item-name" type="text" placeholder="أدخل الاسم الجديد">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-item')">إلغاء</button>
+      <button class="btn btn-sage" onclick="saveEditItem()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Finance Entry Modal -->
+<div class="modal-overlay" id="modal-manual-entry">
+  <div class="modal-box">
+    <div class="modal-title">➕ إضافة صنف غير مُرسى</div>
+    <div class="field">
+      <label class="field-label">الربع</label>
+      <select class="field-input" id="manual-plot"></select>
+    </div>
+    <div class="field">
+      <label class="field-label">المزايد</label>
+      <select class="field-input" id="manual-bidder"></select>
+    </div>
+    <div class="field">
+      <label class="field-label">المبلغ (ر.ع)</label>
+      <input class="field-input" id="manual-amount" type="number" dir="ltr" placeholder="0.000" min="0" step="0.001">
+    </div>
+    <div class="field">
+      <label class="field-label">التاريخ</label>
+      <input class="field-input" id="manual-date" type="date" dir="ltr">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-manual-entry')">إلغاء</button>
+      <button class="btn btn-sage" onclick="saveManualEntry()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assistant Permissions Modal -->
+<div class="modal-overlay" id="modal-assistant-perms">
+  <div class="modal-box">
+    <div class="modal-title">🔧 صلاحيات المساعد</div>
+    <div class="modal-msg" style="margin-bottom:16px">حدد ما يمكن للمساعد الوصول إليه</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <div class="perm-item">
+        <span class="perm-label">📊 إدارة المزايدة (بدء/إيقاف)</span>
+        <label class="toggle"><input type="checkbox" id="perm-auction"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">✍️ مزايدة يدوية</span>
+        <label class="toggle"><input type="checkbox" id="perm-manualbid"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">👥 إدارة المزايدين</span>
+        <label class="toggle"><input type="checkbox" id="perm-bidders"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">📍 إدارة الربوع</span>
+        <label class="toggle"><input type="checkbox" id="perm-items"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">💰 إدارة المالية</span>
+        <label class="toggle"><input type="checkbox" id="perm-finance"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">📄 تقرير اليوم</span>
+        <label class="toggle"><input type="checkbox" id="perm-report"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">🗓️ بدء يوم جديد</span>
+        <label class="toggle"><input type="checkbox" id="perm-newday"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="perm-item">
+        <span class="perm-label">📅 السجل السنوي</span>
+        <label class="toggle"><input type="checkbox" id="perm-annual"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-assistant-perms')">إلغاء</button>
+      <button class="btn btn-water" onclick="saveAssistantPerms()">✅ حفظ الصلاحيات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ████ SCREEN: SPLASH ████ -->
+<div class="screen active" id="screen-splash">
+  <div id="splash-icon-wrap" class="splash-icon">
+    <img src="icon-512.png" alt="قعد الفلج" onerror="this.parentElement.classList.remove('splash-icon');this.parentElement.classList.add('splash-icon-fallback');this.parentElement.innerHTML='🌴'">
+  </div>
+  <div class="splash-name">قعد فلج بطين</div>
+  <div class="splash-tagline">منصة المزايدة الإلكترونية لربوع فلج بطين</div>
+  <div class="splash-loader">
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+  </div>
+</div>
+
+
+<!-- ████ SCREEN: ROLE ████ -->
+<div class="screen" id="screen-role">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="top-bar-logo">
+        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center'">
+      </div>
+      <div>
+        <div class="top-bar-title">قعد فلج بطين</div>
+        <div class="top-bar-sub" id="role-date"></div>
+      </div>
+    </div>
+    <button class="top-bar-action" onclick="openModal('modal-about')">ℹ️ عن التطبيق</button>
+  </div>
+  <div class="role-body">
+    <div class="role-header">
+      <div class="greeting">أهلاً وسهلاً 👋</div>
+      <h1>كيف تريد الدخول؟</h1>
+      <p>اختر نوع دخولك إلى منصة المزايدة</p>
+    </div>
+    <div class="role-card bidder" onclick="goScreen('screen-phone-login')">
+      <div class="role-icon bidder">👤</div>
+      <div style="flex:1">
+        <h3>دخول كمزايد</h3>
+        <p>تسجيل الدخول برقم هاتفك ومفتاح الدخول</p>
+      </div>
+      <div class="role-arrow">‹</div>
+    </div>
+    <div class="role-divider">أو</div>
+    <div class="role-card admin" onclick="goScreen('screen-admin-login')">
+      <div class="role-icon admin">👨‍💼</div>
+      <div style="flex:1">
+        <h3>دخول كمشرف</h3>
+        <p>لوحة التحكم والإدارة الكاملة</p>
+      </div>
+      <div class="role-arrow">‹</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ████ SCREEN: PHONE LOGIN ████ -->
+<div class="screen" id="screen-phone-login">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="top-bar-logo">
+        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+      </div>
+      <div><div class="top-bar-title">تسجيل الدخول</div></div>
+    </div>
+    <button class="top-bar-action" onclick="goScreen('screen-role')">← رجوع</button>
+  </div>
+  <div class="login-body">
+    <div class="login-card">
+      <div class="login-hero">
+        <div class="login-icon">📱</div>
+        <div class="login-title">أدخل رقم هاتفك</div>
+        <div class="login-sub">سيتم التحقق من تسجيلك في منصة المزايدة</div>
+      </div>
+      <div class="field">
+        <label class="field-label">رقم الهاتف مكون من (8 أرقام)</label>
+        <input class="field-input" id="login-phone" type="tel" dir="ltr"
+          placeholder="9XXXXXXXX" maxlength="8" inputmode="numeric"
+          style="font-size:20px;letter-spacing:2px;text-align:center"
+          onkeydown="if(event.key==='Enter')verifyPhone()">
+        <div class="field-hint">مثال: 91234567</div>
+      </div>
+      <button class="btn btn-sage" onclick="verifyPhone()">🔍 تحقق من الرقم</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ████ SCREEN: ADMIN LOGIN ████ -->
+<div class="screen" id="screen-admin-login">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="top-bar-logo">
+        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+      </div>
+      <div><div class="top-bar-title" id="admin-login-title">دخول المشرف</div></div>
+    </div>
+    <button class="top-bar-action" onclick="goScreen('screen-role')">← رجوع</button>
+  </div>
+  <div class="login-body">
+    <div class="login-card">
+      <!-- اختيار نوع الدخول -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px">
+        <button id="login-type-admin" onclick="setLoginType('admin')"
+          style="padding:12px 8px;border-radius:var(--r);border:2px solid var(--sage);
+                 background:var(--sage);color:var(--white);font-family:'Tajawal',sans-serif;
+                 font-size:13px;font-weight:800;cursor:pointer;transition:.2s">
+          👨‍💼 مشرف
+        </button>
+        <button id="login-type-assistant" onclick="setLoginType('assistant')"
+          style="padding:12px 8px;border-radius:var(--r);border:2px solid var(--border-md);
+                 background:var(--surface2);color:var(--text-mid);font-family:'Tajawal',sans-serif;
+                 font-size:13px;font-weight:800;cursor:pointer;transition:.2s">
+          🤝 مساعد
+        </button>
+      </div>
+      <div class="login-hero">
+        <div class="login-icon" id="admin-login-icon">🔐</div>
+        <div class="login-title" id="admin-login-heading">لوحة المشرف</div>
+        <div class="login-sub" id="admin-login-sub">أدخل رمز المشرف السري للمتابعة</div>
+      </div>
+      <div class="field">
+        <label class="field-label" id="admin-code-label">رمز المشرف</label>
+        <input class="field-input" id="admin-code-input" type="password" dir="ltr"
+          placeholder="••••••" autocomplete="off"
+          onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <button class="btn btn-water" id="admin-login-btn" onclick="adminLogin()">🔓 دخول</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ████ SCREEN: BIDDER ████ -->
+<div class="screen" id="screen-bidder">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="top-bar-logo">
+        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+      </div>
+      <div>
+        <div class="top-bar-title">مزايدة قعد الفلج</div>
+        <div class="top-bar-sub" id="bidder-user-label">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="date-chip" id="today-date"></span>
+      <button class="top-bar-action" onclick="bidderLogout()">خروج</button>
+    </div>
+  </div>
+  <div class="scroll-area">
+
+    <!-- Auction Hero -->
+    <div class="auction-hero">
+      <div class="hero-content">
+        <div class="hero-plot-label">📍 الربع الحالي</div>
+        <div class="hero-plot-name" id="bidder-item-name">في انتظار المزايدة...</div>
+        <div class="hero-bid-label">أعلى مبلغ حالياً</div>
+        <div class="hero-amount" id="bidder-top-bid">—</div>
+        <div class="hero-currency">ريال عُماني</div>
+        <div class="hero-bidder">آخر مزايد: <strong id="bidder-last-bidder">—</strong></div>
+        <div id="bidder-min-info" class="hero-min-pill" style="display:none">
+          ⬆ أقل مبلغ مسموح: <strong id="bidder-min-val">—</strong> ر.ع
+        </div>
+        <div class="hero-timer" id="bidder-timer">--:--</div>
+        <div class="hero-status">
+          <div class="live-dot" id="bidder-live-dot" style="display:none"></div>
+          <div id="bidder-status-badge">
+            <span class="status-pill pill-wait">في انتظار البدء</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Winner Card -->
+    <div class="winner-card" id="bidder-winner">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-label">الفائز بالمزايدة</div>
+      <div class="winner-name" id="w-name">—</div>
+      <div class="winner-phone" id="w-phone">—</div>
+      <div class="winner-amt" id="w-amt">—</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">ريال عُماني</div>
+    </div>
+
+    <!-- Hidden -->
+    <div style="display:none">
+      <input id="bidder-name" type="text">
+      <input id="bidder-phone" type="tel">
+    </div>
+
+    <!-- Quick Bids -->
+    <div class="card">
+      <div class="card-title">⚡ زيادة سريعة</div>
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="quickBid(0.2)">+0.2</button>
+        <button class="quick-btn" onclick="quickBid(0.5)">+0.5</button>
+        <button class="quick-btn" onclick="quickBid(1)">+1</button>
+        <!--
+        <button class="quick-btn" onclick="quickBid(1)">+1</button>
+        <button class="quick-btn" onclick="quickBid(2)">+2</button>
+        <button class="quick-btn" onclick="quickBid(5)">+5</button>
+        -->
+      </div>
+      <div class="divider-or">أو أدخل مبلغاً مخصصاً</div>
+      <div class="field" style="margin-top:12px;margin-bottom:12px">
+        <input class="field-input" id="bidder-amount" type="number" dir="ltr"
+          placeholder="قيمة المزايدة (ر.ع)" min="0" step="0.001"
+          style="font-size:20px;text-align:center;font-weight:700">
+      </div>
+      <button class="btn btn-gold" id="bid-submit-btn" onclick="submitBid()" disabled>
+        💰 مزايدة الآن
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ████ SCREEN: ADMIN ████ -->
+<div class="screen" id="screen-admin">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <div class="top-bar-logo">
+        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+      </div>
+      <div>
+        <div class="top-bar-title">لوحة تحكم المشرف</div>
+        <div class="top-bar-sub">إدارة المزايدة</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="date-chip" id="admin-today-date"></span>
+      <button class="top-bar-action" onclick="adminLogout()">خروج</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="adminTab('auction')">
+      <span class="tab-icon">📊</span>المزايدة
+    </button>
+    <button class="tab-btn" onclick="adminTab('bidders')">
+      <span class="tab-icon">👥</span>المزايدون
+    </button>
+    <button class="tab-btn" onclick="adminTab('settings')">
+      <span class="tab-icon">⚙️</span>الإعدادات
+    </button>
+    <button class="tab-btn" onclick="adminTab('finance')">
+      <span class="tab-icon">💰</span>المالية
+    </button>
+    <button class="tab-btn" id="tab-btn-annual" onclick="adminTab('annual')">
+      <span class="tab-icon">📅</span>السجل
+    </button>
+    <button class="tab-btn" id="tab-btn-backup" onclick="adminTab('backup')">
+      <span class="tab-icon">💾</span>النسخ
+    </button>
+  </div>
+
+  <!-- ── TAB: AUCTION ── -->
+  <div id="tab-auction" class="scroll-area">
+
+    <!-- Auction Hero (Admin) -->
+    <div class="auction-hero">
+      <div class="hero-content">
+        <div class="hero-plot-label">📍 الربع الحالي</div>
+        <div class="hero-plot-name" id="admin-item-name">—</div>
+        <div class="hero-bid-label">أعلى مبلغ حالياً</div>
+        <div class="hero-amount" id="admin-top-bid">—</div>
+        <div class="hero-currency">ريال عُماني</div>
+        <div class="hero-bidder">آخر مزايد: <strong id="admin-last-bidder">—</strong></div>
+        <div class="hero-timer" id="admin-timer">--:--</div>
+        <div class="hero-status">
+          <div class="live-dot" id="admin-live-dot" style="display:none"></div>
+          <div id="admin-status-badge">
+            <span class="status-pill pill-wait">في انتظار البدء</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Winner Card -->
+    <div class="winner-card" id="admin-winner">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-label">الفائز بالمزايدة</div>
+      <div class="winner-name" id="aw-name">—</div>
+      <div class="winner-phone" id="aw-phone">—</div>
+      <div class="winner-amt" id="aw-amt">—</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">ريال عُماني</div>
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-whatsapp btn-sm" onclick="adminWhatsapp()">📱 تهنئة بالواتساب</button>
+        <button class="btn btn-sage btn-sm" onclick="saveWinnerToHistory()">💾 حفظ النتيجة</button>
+      </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="admin-section">
+      <div class="admin-section-title">🎛️ ضبط المزايدة</div>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field">
+          <label class="field-label">الربع</label>
+          <select class="field-input" id="a-plot">
+            <option value="ربع الفلج">ربع الفلج</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">الحد الأدنى للزيادة (ر.ع)</label>
+          <input class="field-input" id="a-min-step" type="number" value="0.5" min="0.1" step="0.1" dir="ltr">
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label class="field-label">مدة المزايدة (ثانية)</label>
+          <input class="field-input" id="a-duration" type="number" value="240" min="30" dir="ltr">
+        </div>
+        <div class="field">
+          <label class="field-label">تمديد تلقائي (ثانية)</label>
+          <input class="field-input" id="a-extend" type="number" value="30" min="10" dir="ltr">
+        </div>
+      </div>
+      <div class="ctrl-grid">
+        <button class="btn btn-sage" onclick="adminStartAuction()" data-perm="auction">▶ بدء المزايدة</button>
+        <button class="btn btn-ghost" onclick="adminAddTime()" data-perm="auction">+1 دقيقة</button>
+        <button class="btn btn-gold" onclick="adminNextItem()" data-perm="auction">التالي ⏭</button>
+        <button class="btn btn-red" onclick="adminStopAuction()" data-perm="auction">⏹ إيقاف</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-reset')" data-perm="auction">🔄 إعادة ضبط</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminDailyReport()" data-perm="report">📄 تقرير اليوم</button>
+      </div>
+    </div>
+
+    <!-- Manual Bid -->
+    <div class="admin-section" id="section-manualbid" data-perm-section="manualbid">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="toggleCard('manualbid')">
+        <div class="admin-section-title" style="margin-bottom:0">✍️ مزايدة يدوية (نيابة عن مزايد)</div>
+        <button class="toggle-card-btn" id="toggle-btn-manualbid">إخفاء ▲</button>
+      </div>
+      <div id="toggle-body-manualbid">
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field">
+            <label class="field-label">اسم المزايد</label>
+            <input class="field-input" id="admin-bid-name" type="text" placeholder="الاسم">
+          </div>
+          <div class="field">
+            <label class="field-label">رقم الهاتف</label>
+            <input class="field-input" id="admin-bid-phone" type="tel" dir="ltr" placeholder="9XXXXXXXX">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label class="field-label">المبلغ (ر.ع)</label>
+          <input class="field-input" id="admin-bid-amount" type="number" dir="ltr" placeholder="0.000" min="0" step="0.001">
+        </div>
+        <button class="btn btn-gold" onclick="adminManualBid()">💰 تسجيل المزايدة</button>
+      </div>
+    </div>
+
+    <!-- Attendance -->
+    <div class="card">
+      <div class="att-header" style="cursor:pointer" onclick="toggleAttendance()">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="card-title" style="margin-bottom:0">✅ المتواجدون الآن</div>
+          <span class="att-count-badge" id="admin-att-count">0</span>
+        </div>
+        <button style="background:var(--surface2);border:1.5px solid var(--border-md);
+          color:var(--text-mid);border-radius:var(--r-sm);padding:5px 12px;
+          font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer"
+          id="att-toggle-btn">إخفاء ▲</button>
+      </div>
+      <ul class="att-list" id="admin-attendance-list" style="margin-top:12px">
+        <li class="empty-state">لم يسجّل أحد دخوله بعد</li>
+      </ul>
+    </div>
+
+  </div><!-- /tab-auction -->
+
+
+  <!-- ── TAB: BIDDERS ── -->
+  <div id="tab-bidders" class="scroll-area" style="display:none">
+
+    <!-- Add Bidder -->
+    <div class="admin-section">
+      <div class="admin-section-title">➕ إضافة مزايد جديد</div>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field">
+          <label class="field-label">الاسم الكامل</label>
+          <input class="field-input" id="new-bidder-name" type="text" placeholder="اسم المزايد">
+        </div>
+        <div class="field">
+          <label class="field-label">رقم الهاتف</label>
+          <input class="field-input" id="new-bidder-phone" type="tel" dir="ltr" placeholder="9XXXXXXXX">
+        </div>
+      </div>
+      <button class="btn btn-sage" onclick="addBidder()">➕ إضافة مزايد</button>
+    </div>
+
+    <!-- Pending Requests -->
+    <div class="card">
+      <div class="att-header">
+        <div class="card-title" style="margin-bottom:0">📋 طلبات التسجيل والتفعيل</div>
+        <span class="count-badge" id="pending-count">0</span>
+      </div>
+      <div id="pending-approvals-list">
+        <div class="empty-state">لا توجد طلبات معلقة</div>
+      </div>
+    </div>
+
+    <!-- Bidders List -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;cursor:pointer" onclick="toggleCard('bidders-list-card')">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-title" style="margin-bottom:0">👥 المزايدون المسجّلون</div>
+          <div style="display:flex;align-items:center;gap:6px;background:var(--sage-pale);border:1.5px solid var(--sage-lt);border-radius:20px;padding:4px 12px">
+            <span style="font-size:11px;font-weight:700;color:var(--sage)">المسجّلون</span>
+            <span id="bidders-count" style="font-size:15px;font-weight:900;color:var(--sage);min-width:20px;text-align:center">0</span>
+          </div>
+        </div>
+        <button class="toggle-card-btn" id="toggle-btn-bidders-list-card">إخفاء ▲</button>
+      </div>
+      <div id="toggle-body-bidders-list-card">
+        <div id="bidders-list">
+          <div class="empty-state">لا يوجد مزايدون مسجّلون بعد</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-bidders -->
+
+
+  <!-- ── TAB: SETTINGS ── -->
+  <div id="tab-settings" class="scroll-area" style="display:none">
+
+    <div class="admin-section">
+      <div class="admin-section-title">🗓️ إدارة اليوم</div>
+      <button class="btn btn-ghost" id="btn-newday" onclick="openModal('modal-newday')" style="margin-bottom:10px" data-perm="newday">🔄 بدء يوم مزايدة جديد</button>
+    </div>
+
+    <div class="admin-section" id="section-items" data-perm-section="items">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer" onclick="toggleItemsList()">
+        <div class="admin-section-title" style="margin-bottom:0">📍 إدارة الربوع</div>
+        <button style="background:var(--surface2);border:1.5px solid var(--border-md);
+          color:var(--text-mid);border-radius:var(--r-sm);padding:5px 12px;
+          font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer"
+          id="items-toggle-btn">إخفاء ▲</button>
+      </div>
+      <div id="items-list-wrapper">
+        <div id="items-list" style="margin-bottom:12px">
+          <div class="empty-state">لا توجد ربوع مضافة</div>
+        </div>
+        <button class="btn btn-sage btn-sm" onclick="openModal('modal-add-item')">➕ إضافة ربع</button>
+      </div>
+    </div>
+
+    <!-- تغيير رمز المشرف — للمشرف فقط -->
+    <div class="admin-section" id="section-admin-code">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer" onclick="toggleCard('admin-code')">
+        <div class="admin-section-title" style="margin-bottom:0">🔑 تغيير رمز المشرف</div>
+        <button class="toggle-card-btn" id="toggle-btn-admin-code">إخفاء ▲</button>
+      </div>
+      <div id="toggle-body-admin-code">
+        <div class="field">
+          <label class="field-label">الرمز الحالي</label>
+          <input class="field-input" id="cur-code" type="password" dir="ltr" placeholder="••••••">
+        </div>
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field">
+            <label class="field-label">الرمز الجديد</label>
+            <input class="field-input" id="new-code" type="password" dir="ltr" placeholder="••••••">
+          </div>
+          <div class="field">
+            <label class="field-label">تأكيد الرمز</label>
+            <input class="field-input" id="con-code" type="password" dir="ltr" placeholder="••••••">
+          </div>
+        </div>
+        <button class="btn btn-water" onclick="changeAdminCode()">✅ حفظ الرمز</button>
+      </div>
+    </div>
+
+    <!-- تغيير رمز المساعد — للمساعد فقط (يُظهر هنا بدلاً من قسم إعدادات المساعد) -->
+    <div class="admin-section" id="section-assistant-own-key" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer" onclick="toggleCard('assistant-own-key')">
+        <div class="admin-section-title" style="margin-bottom:0">🔑 تغيير رمز الدخول الخاص بي</div>
+        <button class="toggle-card-btn" id="toggle-btn-assistant-own-key">إخفاء ▲</button>
+      </div>
+      <div id="toggle-body-assistant-own-key">
+        <div class="field">
+          <label class="field-label">رمزي الحالي</label>
+          <input class="field-input" id="asst-cur-code" type="password" dir="ltr" placeholder="••••••">
+        </div>
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field">
+            <label class="field-label">الرمز الجديد</label>
+            <input class="field-input" id="asst-new-code" type="password" dir="ltr" placeholder="••••••">
+          </div>
+          <div class="field">
+            <label class="field-label">تأكيد الرمز</label>
+            <input class="field-input" id="asst-con-code" type="password" dir="ltr" placeholder="••••••">
+          </div>
+        </div>
+        <button class="btn btn-water" onclick="changeAssistantOwnCode()">✅ حفظ رمزي الجديد</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">📞 رقم واتساب الإدارة</div>
+      <div class="field">
+        <div class="setting-row">
+          <input class="field-input" id="admin-phone-input" type="tel" dir="ltr" placeholder="968XXXXXXXX">
+          <button class="btn btn-sage btn-sm" onclick="saveAdminPhone()">حفظ</button>
+        </div>
+        <div class="field-hint">مثال: 96891234567 (بدون +)</div>
+      </div>
+    </div>
+
+    <!-- ضبط أزرار المزايدة السريعة -->
+    <div class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer" onclick="toggleCard('quickbids')">
+        <div class="admin-section-title" style="margin-bottom:0">⚡ ضبط أزرار المزايدة السريعة</div>
+        <button class="toggle-card-btn" id="toggle-btn-quickbids">إخفاء ▲</button>
+      </div>
+      <div id="toggle-body-quickbids">
+        <div class="field-hint" style="margin-bottom:12px">حدد القيمة التي تظهر على كل زر في شاشة المزايد</div>
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field">
+            <label class="field-label">الزر الأول</label>
+            <input class="field-input" id="qb-1" type="number" dir="ltr" placeholder="0.2" min="0.001" step="0.001"
+              oninput="updateQBPreview(this.value||0.2, document.getElementById('qb-2').value||0.5, document.getElementById('qb-3').value||1)">
+          </div>
+          <div class="field">
+            <label class="field-label">الزر الثاني</label>
+            <input class="field-input" id="qb-2" type="number" dir="ltr" placeholder="0.5" min="0.001" step="0.001"
+              oninput="updateQBPreview(document.getElementById('qb-1').value||0.2, this.value||0.5, document.getElementById('qb-3').value||1)">
+          </div>
+          <div class="field">
+            <label class="field-label">الزر الثالث</label>
+            <input class="field-input" id="qb-3" type="number" dir="ltr" placeholder="1" min="0.001" step="0.001"
+              oninput="updateQBPreview(document.getElementById('qb-1').value||0.2, document.getElementById('qb-2').value||0.5, this.value||1)">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <div id="qb-preview-1" style="flex:1;background:var(--sage-pale);border:1.5px solid var(--sage-lt);border-radius:var(--r-sm);padding:10px;text-align:center;font-size:14px;font-weight:800;color:var(--sage)">+0.2</div>
+          <div id="qb-preview-2" style="flex:1;background:var(--sage-pale);border:1.5px solid var(--sage-lt);border-radius:var(--r-sm);padding:10px;text-align:center;font-size:14px;font-weight:800;color:var(--sage)">+0.5</div>
+          <div id="qb-preview-3" style="flex:1;background:var(--sage-pale);border:1.5px solid var(--sage-lt);border-radius:var(--r-sm);padding:10px;text-align:center;font-size:14px;font-weight:800;color:var(--sage)">+1</div>
+        </div>
+        <button class="btn btn-sage" onclick="saveQuickBids()">✅ حفظ الأزرار</button>
+      </div>
+    </div>
+
+    <div class="admin-section" id="section-assistant-settings">
+      <div class="admin-section-title">👨‍💼 إعدادات المساعد</div>
+      <div class="field">
+        <label class="field-label">رمز دخول المساعد</label>
+        <div style="display:flex;gap:8px">
+          <input class="field-input" id="assistant-code-input" type="text" dir="ltr" placeholder="رمز المساعد" style="flex:1">
+          <button class="btn btn-sage btn-sm" onclick="saveAssistantCode()">حفظ</button>
+        </div>
+        <div class="field-hint">رمز مختلف عن رمز المشرف — يمنح صلاحيات محدودة</div>
+      </div>
+      <button class="btn btn-water" style="margin-top:8px" onclick="openAssistantPermsModal()">🔧 تحديد الصلاحيات</button>
+    </div>
+
+  </div><!-- /tab-settings -->
+
+
+  <!-- ── TAB: FINANCE ── -->
+  <div id="tab-finance" class="scroll-area" style="display:none">
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin-bottom:0">💰 سجل المستحقات المالية</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sage btn-sm" onclick="openManualEntryModal()" data-perm="finance">➕ إدخال يدوي</button>
+          <button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppReminder()" data-perm="finance">📱 تذكير</button>
+          <button class="btn btn-water btn-sm" onclick="exportFinancePDF()" data-perm="finance">📄 PDF</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">تصفية حسب المزايد</label>
+        <select class="field-input" id="search-fin-name" onchange="loadFinanceData()">
+          <option value="">— عرض الجميع —</option>
+        </select>
+      </div>
+      <div id="finance-summary" class="fin-summary" style="display:none"></div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;padding:0">
+      <table class="fin-table">
+        <thead>
+          <tr>
+            <th>التاريخ</th>
+            <th>الربع</th>
+            <th>المزايد</th>
+            <th>المبلغ</th>
+            <th>المدفوع</th>
+            <th>المتبقي</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="finance-body">
+          <tr><td colspan="7" style="padding:24px;color:var(--text-muted)">لا توجد سجلات</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-finance -->
+
+  <!-- ── TAB: ANNUAL ── -->
+  <div id="tab-annual" class="scroll-area" style="display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin-bottom:0">📅 السجل السنوي للمزايدات</div>
+        <button class="btn btn-ghost btn-sm" onclick="loadAnnualRecords()" style="font-size:11px">🔄 تحديث</button>
+      </div>
+      <div class="field-hint">إجمالي كل يوم — اضغط 📋 لعرض تفاصيل أي يوم</div>
+    </div>
+    <div id="annual-records-container">
+      <div class="empty-state">جاري التحميل...</div>
+    </div>
+
+    <!-- تقرير اليوم المحدد -->
+    <div id="daily-report-panel" style="display:none;margin-top:14px">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div class="card-title" style="margin-bottom:0" id="daily-report-title">تقرير اليوم</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-water btn-sm" onclick="exportDailyReportPDF()">📄 PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="closeDailyReport()">✕ إغلاق</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="annual-table" id="daily-report-table">
+            <thead><tr>
+              <th>الربع</th><th>الفائز</th><th>المبلغ (ر.ع)</th><th>النوع</th>
+            </tr></thead>
+            <tbody id="daily-report-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-annual -->
+
+  <!-- ── TAB: BACKUP ── -->
+  <div id="tab-backup" class="scroll-area" style="display:none">
+
+    <!-- ترحيل السجلات القديمة — لمرة واحدة -->
+    <div class="card" style="margin-bottom:14px;border:2px solid var(--gold)">
+      <div class="card-title" style="color:var(--gold)">⚡ ترحيل البيانات القديمة</div>
+      <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
+        السجلات المحفوظة قبل التحديث لا تحتوي على حقل <code>confirmed</code>، مما يجعلها غير مرئية في السجل السنوي. اضغط الزر أدناه <strong>مرة واحدة فقط</strong> لإصلاح هذا.
+      </p>
+      <button class="btn btn-gold" onclick="migrateOldRecords()">🔧 ترحيل السجلات القديمة</button>
+      <div id="migration-status" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></div>
+    </div>
+
+    <!-- نسخة احتياطية -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">💾 أخذ نسخة احتياطية</div>
+      <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
+        تصدير جميع بيانات قاعدة البيانات (المزايدون، السجلات المالية، الربوع، الإعدادات) كملف JSON محلي.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-sage" onclick="exportBackupJSON()">📥 تحميل نسخة JSON</button>
+        <button class="btn btn-water" onclick="exportBackupExcel()">📊 تصدير Excel</button>
+      </div>
+      <div id="backup-status" style="margin-top:12px;font-size:12px;color:var(--text-muted)"></div>
+    </div>
+
+    <!-- استرجاع نسخة -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">📤 استرجاع نسخة احتياطية</div>
+      <p style="font-size:13px;color:var(--text-mid);margin-bottom:6px">
+        استيراد ملف JSON محفوظ مسبقاً. <strong style="color:var(--red)">⚠️ سيتم استبدال جميع البيانات الحالية.</strong>
+      </p>
+      <div class="field" style="margin-bottom:12px">
+        <label class="field-label">اختر ملف النسخة الاحتياطية (.json)</label>
+        <input type="file" id="restore-file-input" accept=".json"
+          style="font-family:'Tajawal',sans-serif;font-size:13px;padding:8px;
+                 border:1.5px solid var(--border-md);border-radius:var(--r-sm);
+                 width:100%;box-sizing:border-box;background:var(--surface2)"
+          onchange="previewRestore(this)">
+      </div>
+      <div id="restore-preview" style="display:none;background:var(--surface2);border-radius:var(--r-sm);padding:12px;margin-bottom:12px;font-size:12px"></div>
+      <button class="btn btn-red" id="restore-confirm-btn" style="display:none" onclick="confirmRestore()">
+        ⚠️ تأكيد الاسترجاع واستبدال البيانات
+      </button>
+    </div>
+
+    <!-- تصدير Excel مفصّل -->
+    <div class="card">
+      <div class="card-title">📊 تصدير البيانات للإكسل</div>
+      <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
+        تصدير كل قسم بمفرده كملف Excel منسّق.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-ghost" onclick="exportExcelSheet('bidders')">👥 تصدير المزايدين</button>
+        <button class="btn btn-ghost" onclick="exportExcelSheet('history')">💰 تصدير السجلات المالية</button>
+        <button class="btn btn-ghost" onclick="exportExcelSheet('bids')">📋 تصدير سجل المزايدات</button>
+        <button class="btn btn-ghost" onclick="exportExcelSheet('items')">📍 تصدير الربوع</button>
+      </div>
+    </div>
+
+  </div><!-- /tab-backup -->
+
+</div><!-- /screen-admin -->
+
+
+<!-- Audio -->
+ <!--
+<audio id="bid-sound" preload="auto">
+  <source src="bid.mp3" type="audio/mpeg">
+</audio>
+-->
+<!-- ████████████████████████████████████████████████████████
+     JAVASCRIPT
+████████████████████████████████████████████████████████ -->
+<script>
+'use strict';
+
+/* ══════════════ STATE ══════════════ */
+const DEFAULT_CODE = 'admin1234';
+let db = null, auctionRef = null, biddersRef = null, bidsRef = null;
+let attendanceRef = null, sequenceRef = null, activationRef = null, itemsRef = null;
+let isAdmin = false, isAssistant = false, assistantPerms = {}, currentData = null, timerInterval = null;
+let loggedPhone = null, loggedName = null, serverOffset = 0;
+let currentIndex = -1, auctionSequence = [], currentDeleteKey = null;
+let isPageVisible = true, activeVerifyingPhone = null, tempUserData = null;
+let loginAttempts = 0;
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // ممكن تعرض زر تثبيت
+  console.log("يمكن تثبيت التطبيق");
+});
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+  });
+}
+
+
+/* ══════════════ IDLE MONITOR ══════════════ */
+const IDLE_MS = 5 * 60 * 1000;
+let lastActivity = Date.now(), idleTimer = null;
+['click','touchstart','keydown','scroll'].forEach(e =>
+  document.addEventListener(e, () => lastActivity = Date.now(), { passive: true })
+);
+
+function startIdleMonitor() {
+  stopIdleMonitor();
+  idleTimer = setInterval(() => {
+    if (Date.now() - lastActivity > IDLE_MS) {
+      stopIdleMonitor();
+      showToast('⏳ تم تسجيل الخروج بسبب عدم النشاط', 'warn');
+      bidderLogout();
+    }
+  }, 15000);
+}
+
+function stopIdleMonitor() {
+  if (idleTimer) { clearInterval(idleTimer); idleTimer = null; }
+}
+
+/* ══════════════ INIT ══════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('visibilitychange', () => { isPageVisible = !document.hidden; });
+
+  window.addEventListener('beforeunload', () => {
+    if (attendanceRef && loggedPhone) attendanceRef.child(loggedPhone).remove();
+    if (biddersRef && loggedPhone) biddersRef.child(loggedPhone).update({ isOnline: false, sessionId: null });
+  });
+
+  setTimeout(() => doInitFirebase(), 900);
+});
+
+/* ══════════════ FIREBASE ══════════════ */
+function doInitFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    auctionRef    = db.ref('auction');
+    biddersRef    = db.ref('bidders');
+    bidsRef       = db.ref('bids');
+    attendanceRef = db.ref('attendance');
+    sequenceRef   = db.ref('sequence');
+    activationRef = db.ref('activationRequests');
+    itemsRef      = db.ref('items');
+
+    syncServerTime();
+    loadItems();
+    listenAuction();
+    listenAttendance();
+    listenSequence();
+    loadAdminPhone();
+    loadQuickBids();
+    loadAssistantCode();
+
+    // Check existing session
+    const session = localStorage.getItem('user_session');
+    if (session) {
+      const parsed = JSON.parse(session);
+      loggedName  = parsed.name;
+      loggedPhone = parsed.phone;
+      biddersRef.child(loggedPhone).once('value').then(snap => {
+        const u = snap.val();
+        if (u && u.loginKey) {
+          enterBidderScreen();
+          startIdleMonitor();
+        } else {
+          localStorage.removeItem('user_session');
+          loggedName = loggedPhone = null;
+          showToast('انتهت الجلسة، يرجى تسجيل الدخول', 'warn');
+          goScreen('screen-role');
+        }
+      }).catch(() => { goScreen('screen-role'); });
+      return;
+    }
+    goScreen('screen-role');
+  } catch(e) {
+    showToast('تعذّر الاتصال بالخادم', 'error');
+    goScreen('screen-role');
+  }
+}
+
+function syncServerTime() {
+  db.ref('/.info/serverTimeOffset').on('value', s => { serverOffset = s.val() || 0; });
+}
+
+function listenSequence() {
+  if (!sequenceRef) return;
+  sequenceRef.on('value', s => {
+    const d = s.val();
+    if (d && typeof d.index === 'number') currentIndex = d.index;
+  });
+}
+
+/* ══════════════ TIME UTILS ══════════════ */
+function now() { return Date.now() + serverOffset; }
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtTime(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleTimeString('ar-OM', { hour: '2-digit', minute: '2-digit' });
+}
+function getTodayKey() {
+  const d = new Date(now());
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('ar-OM', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+/* ══════════════ SCREEN NAV ══════════════ */
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+
+  // Update dates on navigation
+  const today = fmtDate(new Date());
+  setText('today-date', today);
+  setText('admin-today-date', today);
+  setText('role-date', today);
+}
+
+/* ══════════════ MODALS ══════════════ */
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('open'); el.style.display = 'flex'; }
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('open'); el.style.display = 'none'; }
+}
+function openSingleModal(id) {
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.classList.remove('open'); el.style.display = 'none';
+  });
+  openModal(id);
+}
+function showConfirm(title, msg, onYes, yesLabel = 'تأكيد') {
+  setText('confirm-title', title);
+  setText('confirm-msg', msg);
+  setText('confirm-yes', yesLabel);
+  document.getElementById('confirm-yes').onclick = () => { closeConfirm(); onYes(); };
+  openModal('modal-confirm');
+}
+function closeConfirm() { closeModal('modal-confirm'); }
+
+// Close modals on background click
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+    e.target.style.display = 'none';
+  }
+});
+
+/* ══════════════ TOAST ══════════════ */
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ══════════════ DOM ══════════════ */
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function setHtml(id, val) { const el = document.getElementById(id); if (el) el.innerHTML = val; }
+function bumpEl(el, val) {
+  if (!el) return;
+  el.textContent = val;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  setTimeout(() => el.classList.remove('bump'), 400);
+}
+
+/* ══════════════ LOAD ITEMS ══════════════ */
+function loadItems() {
+  if (!db) return;
+  itemsRef.on('value', snap => {
+    const items = snap.val();
+    auctionSequence = [];
+    const select = document.getElementById('a-plot');
+    const itemsList = document.getElementById('items-list');
+    if (select) select.innerHTML = '';
+    if (!items) {
+      if (itemsList) itemsList.innerHTML = '<div class="empty-state">لا توجد ربوع مضافة</div>';
+      return;
+    }
+    let listHtml = '';
+    Object.entries(items).forEach(([key, name]) => {
+      if (select) {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        select.appendChild(opt);
+      }
+      auctionSequence.push(name);
+      listHtml += `<div class="bidder-item">
+        <div style="flex:1;font-size:13px;font-weight:700;color:var(--text)">📍 ${name}</div>
+        <div class="bidder-actions">
+          <button class="bidder-edit" onclick="openEditItem('${key}','${name}')">✏️</button>
+          <button class="bidder-delete" onclick="deleteItem('${key}','${name}')">🗑️</button>
+        </div>
+      </div>`;
+    });
+    if (itemsList) itemsList.innerHTML = listHtml || '<div class="empty-state">لا توجد ربوع</div>';
+  });
+}
+
+function addItem() {
+  const name = document.getElementById('new-item-name').value.trim();
+  if (!name) { showToast('أدخل اسم الربع', 'error'); return; }
+  itemsRef.push(name).then(() => {
+    document.getElementById('new-item-name').value = '';
+    closeModal('modal-add-item');
+    showToast('✅ تمت إضافة الربع', 'success');
+  });
+}
+
+window.deleteItem = function(key, name) {
+  showConfirm('حذف الربع', `هل تريد حذف ربع "${name}"؟`, () => {
+    itemsRef.child(key).remove().then(() => showToast('تم الحذف', 'warn'));
+  }, 'نعم، احذف');
+};
+
+window.openEditItem = function(key, name) {
+  document.getElementById('edit-item-key').value  = key;
+  document.getElementById('edit-item-name').value = name;
+  openModal('modal-edit-item');
+};
+
+window.saveEditItem = function() {
+  const key  = document.getElementById('edit-item-key').value;
+  const name = document.getElementById('edit-item-name').value.trim();
+  if (!name) { showToast('أدخل اسم الربع', 'error'); return; }
+  itemsRef.child(key).set(name).then(() => {
+    closeModal('modal-edit-item');
+    showToast('✅ تم تعديل اسم الربع', 'success');
+  }).catch(() => showToast('خطأ في التعديل', 'error'));
+};
+
+function loadAdminPhone() {
+  if (!db) return;
+  db.ref('settings/adminPhone').on('value', snap => {
+    const val = snap.val();
+    const inp = document.getElementById('admin-phone-input');
+    if (val && inp) inp.value = val;
+  });
+}
+
+/* ══════════════ ATTENDANCE ══════════════ */
+function listenAttendance() {
+  if (!attendanceRef) return;
+  attendanceRef.on('value', snap => {
+    renderAttendance(snap.val(), 'admin-attendance-list', 'admin-att-count');
+  });
+}
+
+function renderAttendance(data, listId, countId) {
+  const list = document.getElementById(listId);
+  const countEl = document.getElementById(countId);
+  if (!list) return;
+  if (!data) {
+    list.innerHTML = '<li class="empty-state">لم يسجّل أحد دخوله بعد</li>';
+    if (countEl) countEl.textContent = '0';
+    return;
+  }
+  const entries = Object.values(data).sort((a,b) => (a.joinedAt||0)-(b.joinedAt||0));
+  if (countEl) countEl.textContent = entries.length;
+  list.innerHTML = entries.map(v => {
+    const initials = (v.name||'?').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<li class="att-item">
+      <div class="att-avatar">${initials}</div>
+      <div style="flex:1">
+        <div class="att-name">${v.name||'—'}</div>
+        <div class="att-phone">${v.phone||''}</div>
+      </div>
+      <div class="att-time">${fmtTime(v.joinedAt)}</div>
+      <span class="att-live">حاضر</span>
+    </li>`;
+  }).join('');
+}
+
+function recordAttendance(name, phone) {
+  if (!attendanceRef) return;
+  const key = String(phone).replace(/\D/g,'');
+  attendanceRef.child(key).set({ name, phone, joinedAt: now() });
+}
+
+/* ══════════════ AUCTION LISTENER ══════════════ */
+function listenAuction() {
+  if (!auctionRef) return;
+  auctionRef.on('value', snap => {
+    currentData = snap.val();
+    renderAuction(currentData);
+  });
+}
+
+function renderAuction(data) {
+  const isLive  = data && data.status === 'live';
+  const isEnded = data && data.status === 'ended';
+
+  const itemName = data ? (data.plot || 'ربع الفلج') : 'في انتظار المزايدة...';
+  setText('bidder-item-name', itemName);
+  setText('admin-item-name', itemName);
+
+  const topBid = data ? (data.currentBid != null ? Number(data.currentBid).toFixed(3) : '—') : '—';
+  bumpEl(document.getElementById('bidder-top-bid'), topBid);
+  bumpEl(document.getElementById('admin-top-bid'), topBid);
+
+  if (data && data.currentBid && data.currentBid !== window._lastBidPlayed) {
+    window._lastBidPlayed = data.currentBid;
+    playBidSound();
+    if (!isPageVisible && navigator.vibrate) navigator.vibrate([200,100,200]);
+    else if (navigator.vibrate) navigator.vibrate(80);
+  }
+
+  const lastBidder = data && data.currentBidder ? data.currentBidder : '—';
+  setText('bidder-last-bidder', lastBidder);
+  setText('admin-last-bidder', lastBidder);
+
+  const minInfoEl = document.getElementById('bidder-min-info');
+  if (minInfoEl) {
+    const minBid = data ? ((Number(data.currentBid)||0)+(Number(data.minStep)||0)) : null;
+    minInfoEl.style.display = (data && isLive) ? 'inline-flex' : 'none';
+    setText('bidder-min-val', minBid ? minBid.toFixed(3) : '—');
+  }
+
+  const badgeHtml = isLive
+    ? '<span class="status-pill pill-live"><span class="live-dot"></span>جارية الآن 🔴</span>'
+    : isEnded
+    ? '<span class="status-pill pill-ended">انتهت المزايدة ✔️</span>'
+    : '<span class="status-pill pill-wait">في انتظار البدء</span>';
+  setHtml('bidder-status-badge', badgeHtml);
+  setHtml('admin-status-badge', badgeHtml);
+
+  ['bidder-live-dot','admin-live-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isLive ? 'block' : 'none';
+  });
+
+  if (isLive) {
+    if (data.endsAt && now() >= data.endsAt) {
+      auctionRef.transaction(cur => {
+        if (!cur || cur.status !== 'live' || cur.closed) return;
+        cur.status = 'ended'; cur.closed = true; return cur;
+      });
+    } else {
+      startTimer(data.endsAt, 'bidder-timer', 'admin-timer');
+    }
+  } else {
+    clearInterval(timerInterval);
+    setText('bidder-timer', isEnded ? '00:00' : '--:--');
+    setText('admin-timer', isEnded ? '00:00' : '--:--');
+  }
+
+  const bidBtn = document.getElementById('bid-submit-btn');
+  if (bidBtn) bidBtn.disabled = !isLive;
+
+  if (isEnded && data.currentBidder) {
+    showWinner(data, 'bidder-winner', 'w-name', 'w-phone', 'w-amt');
+    showWinner(data, 'admin-winner', 'aw-name', 'aw-phone', 'aw-amt');
+  } else {
+    hideWinner('bidder-winner'); hideWinner('admin-winner');
+  }
+}
+
+/* ══════════════ TIMER ══════════════ */
+function startTimer(endsAt, ...ids) {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const rem = Math.max(0, endsAt - now());
+    const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000);
+    const txt = pad(m) + ':' + pad(s);
+    ids.forEach(id => {
+      const el = document.getElementById(id); if (!el) return;
+      el.textContent = txt;
+      el.classList.toggle('urgent', rem <= 30000 && rem > 0);
+    });
+    if (rem === 0) clearInterval(timerInterval);
+  }, 500);
+}
+
+/* ══════════════ WINNER ══════════════ */
+function showWinner(data, wrapId, nameId, phoneId, amtId) {
+  const wrap = document.getElementById(wrapId); if (!wrap) return;
+  wrap.style.display = 'block';
+  setText(nameId, data.currentBidder || '—');
+  setText(phoneId, data.currentBidderPhone || '—');
+  setText(amtId, data.currentBid != null ? Number(data.currentBid).toFixed(3) : '—');
+}
+function hideWinner(id) {
+  const el = document.getElementById(id); if (el) el.style.display = 'none';
+}
+
+/* ══════════════ PHONE LOGIN ══════════════ */
+function verifyPhone() {
+  const raw   = document.getElementById('login-phone').value.trim();
+  const phone = raw.replace(/\D/g,'');
+  if (!phone || phone.length < 7) { showToast('أدخل رقم هاتف صحيح', 'error'); return; }
+  if (!db) { showToast('لا يوجد اتصال بقاعدة البيانات', 'error'); return; }
+
+  const key = phone.slice(-8);
+  tempUserData = { phone: key };
+
+  biddersRef.child(key).once('value', snap => {
+    if (snap.exists()) {
+      const bidder = snap.val();
+      loggedPhone = key;
+      loggedName  = bidder.name;
+      tempUserData = { phone: key, name: bidder.name };
+      setText('enter-key-title', `مرحباً ${bidder.name}`);
+      setText('enter-key-msg', 'حسابك مسجّل. أدخل مفتاح الدخول للمتابعة.');
+      openSingleModal('modal-enter-key');
+      setTimeout(() => document.getElementById('login-key-input')?.focus(), 250);
+    } else {
+      openSingleModal('modal-register');
+    }
+  });
+}
+
+function enterBidderScreen() {
+  if (!loggedName || !loggedPhone) return;
+  setText('bidder-user-label', loggedName + '  |  ' + loggedPhone);
+  document.getElementById('bidder-name').value  = loggedName;
+  document.getElementById('bidder-phone').value = loggedPhone;
+  recordAttendance(loggedName, loggedPhone);
+  goScreen('screen-bidder');
+}
+
+function bidderLogout() {
+  stopIdleMonitor();
+  if (attendanceRef && loggedPhone) attendanceRef.child(loggedPhone).remove();
+  if (biddersRef && loggedPhone) biddersRef.child(loggedPhone).update({ isOnline: false, sessionId: null });
+  localStorage.removeItem('user_session');
+  loggedPhone = loggedName = null;
+  document.getElementById('bidder-name').value = '';
+  document.getElementById('bidder-phone').value = '';
+  goScreen('screen-role');
+}
+
+/* ══════════════ REGISTER NEW BIDDER ══════════════ */
+function generateLoginKey() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+function generateSessionId() { return 'sess-' + Math.random().toString(36).substr(2,9); }
+
+function submitNewBidder() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name || name.length < 3) { showToast('أدخل الاسم الكامل', 'error'); return; }
+  const phoneKey = String(tempUserData.phone).replace(/\D/g,'').slice(-8);
+
+  biddersRef.child(phoneKey).once('value').then(snap => {
+    if (snap.exists()) { showToast('هذا الرقم مسجّل مسبقاً', 'error'); return; }
+    const loginKey = generateLoginKey();
+    biddersRef.child(phoneKey).set({
+      name, phone: phoneKey, loginKey,
+      isVerified: true, isOnline: false, createdAt: Date.now()
+    }).then(() => {
+      closeModal('modal-register');
+      setText('generated-key', loginKey);
+      const fullPhone = '968' + phoneKey;
+      const msg = `مرحباً 👋\nتم إنشاء حسابك في منصة قعد فلج بطين 🌴\n\n🔐 مفتاح الدخول الخاص بك:\n${loginKey}\n\n⚠️ احتفظ بهذا الرقم جيداً ستستخدمه لدخولك للمزايدة ولا تشاركه مع أحد.`;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const waUrl = isMobile
+        ? `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+        : `https://web.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(msg)}`;
+
+      document.getElementById('whatsapp-send-btn').onclick = () => window.open(waUrl, '_blank');
+      document.getElementById('confirm-key-btn').onclick = () => {
+        closeModal('modal-login-key');
+        loggedPhone = phoneKey;
+        loggedName  = name;
+        biddersRef.child(phoneKey).update({
+          isOnline: true, sessionId: generateSessionId(), sessionStartedAt: Date.now()
+        });
+        localStorage.setItem('user_session', JSON.stringify({ name, phone: phoneKey }));
+        enterBidderScreen();
+        startIdleMonitor();
+      };
+      openSingleModal('modal-login-key');
+    }).catch(() => showToast('خطأ في إنشاء الحساب', 'error'));
+  });
+}
+
+/* ══════════════ LOGIN KEY ══════════════ */
+function submitLoginKey() {
+  const enteredKey = document.getElementById('login-key-input').value.trim();
+  if (!enteredKey) { showToast('أدخل مفتاح الدخول', 'error'); return; }
+
+  biddersRef.child(loggedPhone).once('value').then(snap => {
+    const user = snap.val();
+    if (!user) { showToast('رقم الهاتف غير مسجّل', 'error'); return; }
+
+    if (String(user.loginKey).trim() === String(enteredKey).trim()) {
+      if (user.isOnline) {
+        showToast('⚠️ هذا الحساب مسجّل من جهاز آخر. تواصل مع الإدارة لتسجيل الخروج.', 'error');
+        return;
+      }
+      loginAttempts = 0;
+      const sid = generateSessionId();
+      biddersRef.child(loggedPhone).update({ isOnline: true, sessionId: sid, sessionStartedAt: Date.now() });
+      localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone }));
+      document.getElementById('login-key-input').value = '';
+      closeModal('modal-enter-key');
+      showToast('✅ تم تسجيل الدخول بنجاح', 'success');
+      enterBidderScreen();
+      startIdleMonitor();
+    } else {
+      loginAttempts++;
+      document.getElementById('login-key-input').value = '';
+      if (loginAttempts >= 5) {
+        showToast('⚠️ تجاوزت عدد المحاولات. اطلب مفتاحاً جديداً.', 'warn');
+      } else {
+        showToast(`❌ مفتاح غير صحيح (${loginAttempts}/5)`, 'error');
+      }
+    }
+  }).catch(() => showToast('خطأ في الاتصال', 'error'));
+}
+
+function requestResetKey() {
+  if (!loggedPhone) { showToast('أدخل رقم الهاتف أولاً', 'error'); return; }
+  loginAttempts = 0;
+  biddersRef.child(loggedPhone).once('value').then(snap => {
+    const user = snap.val();
+    const name = user?.name || '—';
+    activationRef.child(loggedPhone).set({
+      name, phone: loggedPhone, requestedAt: Date.now(), type: 'resetKey'
+    }).then(() => showToast('✅ تم إرسال الطلب للإدارة', 'success'))
+      .catch(() => showToast('خطأ في إرسال الطلب', 'error'));
+  });
+}
+
+/* ══════════════ ACTIVATION VIA WHATSAPP ══════════════ */
+function requestActivation() {
+  if (!tempUserData || !tempUserData.phone) { showToast('خطأ في البيانات', 'error'); return; }
+  const phoneKey = String(tempUserData.phone).replace(/\D/g,'').slice(-8);
+  const code = Math.floor(1000 + Math.random()*9000);
+  const userName = tempUserData.name || 'مزايد مسجّل';
+  activationRef.child(phoneKey).set({
+    name: userName, phone: tempUserData.phone,
+    code, timestamp: firebase.database.ServerValue.TIMESTAMP
+  }).then(() => {
+    db.ref('settings/adminPhone').once('value').then(snap => {
+      const adminPhone = snap.val() || '96800000000';
+      const cleanPhone = String(adminPhone).replace(/\D/g,'');
+      const finalPhone = cleanPhone.startsWith('968') ? cleanPhone : '968' + cleanPhone;
+      const msg = `مرحباً إدارة الفلج 🌴\nطلب إعادة تفعيل دخول:\nالاسم: ${userName}\nالرمز السري: *${code}*`;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const url = isMobile
+        ? `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`
+        : `https://web.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+      closeModal('modal-verify');
+      activeVerifyingPhone = phoneKey;
+      openModal('modal-otp');
+      showToast('أرسل رسالة الواتساب ثم أدخل الرمز', 'success');
+    });
+  });
+}
+
+/* ══════════════ OTP ══════════════ */
+function closeOTPModal() { closeModal('modal-otp'); activeVerifyingPhone = null; }
+function verifyEnteredCode() {
+  const code = document.getElementById('otp-input').value.trim();
+  if (!code || code.length !== 4) { showToast('أدخل رمزاً من 4 أرقام', 'error'); return; }
+  if (!activeVerifyingPhone) return;
+  activationRef.child(activeVerifyingPhone).once('value').then(snap => {
+    if (!snap.exists()) { showToast('لم يُعثر على طلب التفعيل', 'error'); return; }
+    const req = snap.val();
+    if (String(req.code) === String(code)) {
+      const loginKey = generateLoginKey();
+      biddersRef.child(activeVerifyingPhone).update({ loginKey, isVerified: true }).then(() => {
+        activationRef.child(activeVerifyingPhone).remove();
+        loggedPhone = activeVerifyingPhone;
+        loggedName  = req.name;
+        closeModal('modal-otp');
+        showToast(`🎉 تم التحقق! مفتاحك الجديد: ${loginKey}`, 'success');
+        setText('enter-key-title', 'مفتاحك الجديد');
+        setText('enter-key-msg', `تم توليد مفتاح جديد لك: ${loginKey}\nاحتفظ به جيداً.`);
+        document.getElementById('login-key-input').value = loginKey;
+      });
+    } else {
+      showToast('رمز التحقق غير صحيح', 'error');
+    }
+  }).catch(() => showToast('خطأ في الاتصال', 'error'));
+}
+
+/* ══════════════ QUICK BID ══════════════ */
+function quickBid(plus) {
+  if (!currentData || currentData.status !== 'live') { showToast('المزايدة غير نشطة', 'error'); return; }
+  const cur   = Number(currentData.currentBid) || Number(currentData.minBid) || 0;
+  const name  = loggedName  || document.getElementById('bidder-name').value.trim();
+  const phone = loggedPhone || document.getElementById('bidder-phone').value.trim();
+  if (!name || !phone) { showToast('يرجى تسجيل الدخول أولاً', 'error'); return; }
+  if (currentData.currentBidderPhone === phone) { showToast('أنت صاحب أعلى مزايدة حالياً 🏆', 'warn'); return; }
+  doPlaceBid(cur + plus, name, phone);
+}
+
+/* ══════════════ SUBMIT BID ══════════════ */
+function submitBid() {
+  if (!currentData || currentData.status !== 'live') { showToast('المزايدة غير نشطة', 'error'); return; }
+  const amt   = parseFloat(document.getElementById('bidder-amount').value);
+  const name  = loggedName  || document.getElementById('bidder-name').value.trim();
+  const phone = loggedPhone || document.getElementById('bidder-phone').value.trim();
+  if (!name || !phone) { showToast('يرجى تسجيل الدخول', 'error'); return; }
+  if (currentData.currentBidderPhone === phone) { showToast('أنت صاحب أعلى مزايدة حالياً 🏆', 'warn'); return; }
+  const minNext = (Number(currentData.currentBid)||Number(currentData.minBid)||0) + (Number(currentData.minStep)||0);
+  if (isNaN(amt) || amt < minNext) {
+    showToast(`أقل مبلغ مسموح: ${minNext.toFixed(3)} ر.ع`, 'error'); return;
+  }
+  doPlaceBid(amt, name, phone);
+}
+
+/* ══════════════ PLACE BID ══════════════ */
+function doPlaceBid(amount, name, phone) {
+  if (!navigator.onLine) { showToast('لا يوجد اتصال بالإنترنت', 'error'); return; }
+  if (Date.now() - (window.lastBidTime||0) < 1500) { showToast('انتظر قليلاً...', 'warn'); return; }
+  window.lastBidTime = Date.now();
+  if (!auctionRef) { showToast('لا يوجد اتصال بقاعدة البيانات', 'error'); return; }
+
+  auctionRef.transaction(cur => {
+    if (!cur || cur.status !== 'live') return;
+    const safeNow = Date.now();
+    if (cur.endsAt && safeNow >= cur.endsAt) { cur.status = 'ended'; return cur; }
+    const minPrice = (Number(cur.currentBid)||Number(cur.minBid)||0) + (Number(cur.minStep)||0);
+    if (amount < minPrice) return;
+    cur.currentBid = amount;
+    cur.currentBidder = name;
+    cur.currentBidderPhone = phone;
+    const extMs = (cur.extend || 30) * 1000;
+    cur.endsAt = Math.max(cur.endsAt||safeNow, safeNow + extMs);
+    return cur;
+  }, (err, committed, snap) => {
+    if (err) {
+      showToast('خطأ في الاتصال', 'error');
+    } else if (!committed) {
+      showToast('شخص آخر زايد بسعر أعلى — حاول مجدداً', 'warn');
+    } else {
+      const d = snap.val();
+      recordBidInHistory(amount, name, phone, d.plot);
+      document.getElementById('bidder-amount').value = '';
+      showToast(`✅ تمت مزايدتك: ${amount.toFixed(3)} ر.ع`, 'success');
+      playBidSound();
+    }
+  }).catch(() => showToast('خطأ غير متوقع', 'error'));
+}
+
+function recordBidInHistory(amount, name, phone, plot) {
+  const dayKey  = getTodayKey();
+  const plotKey = (plot || 'general').replace(/\s/g,'_').replace(/[^\w\u0600-\u06FF]/g,'');
+  bidsRef.child(dayKey).child(plotKey).push({
+    name, phone, amount, plot: plot || 'general',
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
+function playBidSound() {
+  const s = document.getElementById('bid-sound');
+  if (s) { s.currentTime = 0; s.play().catch(() => {}); }
+}
+
+/* ══════════════ ADMIN LOGIN ══════════════ */
+function adminLogin() {
+  if (!db) { showToast('لا يوجد اتصال', 'error'); return; }
+  const code = document.getElementById('admin-code-input').value.trim();
+  if (!code) { showToast('أدخل الرمز', 'error'); return; }
+
+  if (selectedLoginType === 'admin') {
+    // تحقق من رمز المشرف
+    db.ref('adminCode').once('value', snap => {
+      const stored = snap.val() || DEFAULT_CODE;
+      if (code.trim() === String(stored).trim()) {
+        isAdmin = true; isAssistant = false; assistantPerms = {};
+        document.getElementById('admin-code-input').value = '';
+        showToast('مرحباً بك يا مشرف ✅', 'success');
+        goScreen('screen-admin');
+        adminTab('auction');
+        loadBiddersList();
+        listenPendingRequests();
+        applyAssistantUI();
+      } else {
+        showToast('❌ رمز المشرف غير صحيح', 'error');
+      }
+    });
+  } else {
+    // تحقق من رمز المساعد
+    db.ref('settings/assistantCode').once('value', snapA => {
+      const aCode = snapA.val();
+      if (aCode && code.trim() === String(aCode).trim()) {
+        isAdmin = false; isAssistant = true;
+        document.getElementById('admin-code-input').value = '';
+        db.ref('settings/assistantPermissions').once('value', snapP => {
+          assistantPerms = snapP.val() || {};
+          showToast('مرحباً بك يا مساعد 👋', 'success');
+          goScreen('screen-admin');
+          adminTab('auction');
+          loadBiddersList();
+          listenPendingRequests();
+          applyAssistantUI();
+        });
+      } else {
+        showToast('❌ رمز المساعد غير صحيح', 'error');
+      }
+    });
+  }
+}
+
+function adminLogout() {
+  isAdmin = false; isAssistant = false; assistantPerms = {};
+  goScreen('screen-role');
+}
+
+/* ══════════════ ADMIN TABS ══════════════ */
+function adminTab(tab) {
+  ['auction','bidders','settings','finance','annual','backup'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const cur = document.getElementById('tab-'+tab);
+  if (cur) cur.style.display = 'block';
+  const order = ['auction','bidders','settings','finance','annual','backup'];
+  const idx = order.indexOf(tab);
+  if (idx !== -1) {
+    const btns = document.querySelectorAll('.tab-btn');
+    if (btns[idx]) btns[idx].classList.add('active');
+  }
+  if (tab === 'finance') loadFinanceData();
+  if (tab === 'annual')  loadAnnualRecords();
+}
+
+/* ══════════════ ADMIN AUCTION CONTROL ══════════════ */
+function adminStartAuction() {
+  if (!isAdmin) return;
+  const plot    = document.getElementById('a-plot').value || 'ربع الفلج';
+  const minStep = parseFloat(document.getElementById('a-min-step').value) || 0.5;
+  const dur     = parseInt(document.getElementById('a-duration').value) || 240;
+  const ext     = parseInt(document.getElementById('a-extend').value) || 30;
+  auctionRef.set({
+    plot, minStep, extend: ext,
+    currentBid: null, currentBidder: null, currentBidderPhone: null,
+    status: 'live', endsAt: now() + (dur*1000), bids: null, startedAt: Date.now(), closed: false
+  }).then(() => showToast(`✅ بدأت المزايدة على "${plot}"`, 'success'));
+}
+
+function adminStopAuction() {
+  if (!isAdmin || !currentData) return;
+  auctionRef.update({ status: 'ended' }).then(() => showToast('⏹ تم إيقاف المزايدة', 'warn'));
+}
+
+function saveWinnerToHistory() {
+  if (!currentData || !currentData.currentBidder) { showToast('لا يوجد فائز لحفظه', 'error'); return; }
+  const key = Date.now().toString();
+  const dateKey = getTodayKey();
+  db.ref('history').child(key).set({
+    plot:      currentData.plot || '',
+    winner:    currentData.currentBidder || '',
+    phone:     currentData.currentBidderPhone || '',
+    amount:    currentData.currentBid || 0,
+    timestamp: Date.now(),
+    dateKey,
+    paidAmount: 0,
+    confirmed:  true   // ← يحمي السجل في السجل السنوي
+  }).then(() => showToast('✅ تم حفظ نتيجة المزايدة في السجل', 'success'));
+}
+
+function adminReset() {
+  if (!isAdmin) return;
+  auctionRef.remove().then(() => showToast('🔄 تم إعادة الضبط', 'warn'));
+}
+
+function adminAddTime() {
+  if (!isAdmin || !currentData || currentData.status !== 'live') return;
+  auctionRef.update({ endsAt: (currentData.endsAt || now()) + 60000 })
+    .then(() => showToast('+ دقيقة واحدة أضيفت', 'success'));
+}
+
+function adminNextItem() {
+  if (!isAdmin) return;
+  const source = auctionSequence.length ? auctionSequence : [];
+  if (!source.length) { showToast('لا توجد ربوع مضافة', 'error'); return; }
+  if (currentIndex >= source.length - 1) { showToast('انتهت جميع الربوع لهذا اليوم ✅', 'success'); return; }
+  const newIdx = currentIndex + 1;
+  sequenceRef.set({ index: newIdx });
+  const nextPlot = source[newIdx];
+  const select = document.getElementById('a-plot');
+  if (select) select.value = nextPlot;
+  showToast('📍 تم اختيار: ' + nextPlot, 'success');
+}
+
+function adminManualBid() {
+  if (!isAdmin || !currentData || currentData.status !== 'live') {
+    showToast('المزايدة غير نشطة', 'error'); return;
+  }
+  const name  = document.getElementById('admin-bid-name').value.trim();
+  const phone = document.getElementById('admin-bid-phone').value.trim().replace(/\D/g,'').slice(-8);
+  const amt   = parseFloat(document.getElementById('admin-bid-amount').value);
+  if (!name || !phone || isNaN(amt)) { showToast('أدخل جميع البيانات', 'error'); return; }
+  doPlaceBid(amt, name, phone);
+  document.getElementById('admin-bid-amount').value = '';
+}
+
+function adminWhatsapp() {
+  if (!currentData || !currentData.currentBidderPhone) {
+    showToast('لا يوجد فائز', 'error'); return;
+  }
+  const msg = `نبارك لك الفوز بمزايدة ربع (${currentData.plot}) بتاريخ (${getTodayKey()}) بقيمة (${Number(currentData.currentBid).toFixed(3)} ر.ع).\nيرجى التواصل مع وكيل الفلج لإتمام الدفع.`;
+  openWhatsapp(currentData.currentBidderPhone, msg);
+}
+
+/* ══════════════ NEW DAY ══════════════ */
+window.adminNewDay = async function() {
+  if (currentData && currentData.status === 'live') {
+    showToast('لا يمكن بدء يوم جديد أثناء مزايدة نشطة', 'error'); return;
+  }
+  try {
+    await auctionRef.remove();
+    if (attendanceRef) await attendanceRef.remove();
+    if (sequenceRef) await sequenceRef.set({ index: -1 });
+    if (bidsRef) await bidsRef.remove();
+    showToast('✅ تم بدء يوم مزايدة جديد', 'success');
+  } catch(e) { showToast('❌ حدث خطأ', 'error'); }
+};
+
+/* ══════════════ BIDDERS MANAGEMENT ══════════════ */
+function loadBiddersList() {
+  if (!biddersRef) return;
+  biddersRef.on('value', snap => {
+    const data = snap.val();
+    const list = document.getElementById('bidders-list');
+    const countEl = document.getElementById('bidders-count');
+    if (!list) return;
+    if (!data) {
+      list.innerHTML = '<div class="empty-state">لا يوجد مزايدون مسجّلون</div>';
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+    const entries = Object.entries(data);
+    if (countEl) countEl.textContent = entries.length;
+    list.innerHTML = entries.map(([key, b]) => {
+      const initials = (b.name||'?').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+      const online   = b.isOnline ? '<span class="online-badge"></span>' : '';
+      return `<div class="bidder-item">
+        <div class="bidder-avatar">${initials}</div>
+        <div style="flex:1">
+          <div class="bidder-name">${online}${b.name||'—'}</div>
+          <div class="bidder-phone">${b.phone||key}</div>
+        </div>
+        <div class="bidder-actions">
+          <button class="bidder-edit" onclick="openEditBidder('${key}')">✏️</button>
+          <button class="bidder-delete" onclick="deleteBidder('${key}','${(b.name||'').replace(/'/g,'`')}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="empty-state">لا يوجد مزايدون</div>';
+  });
+}
+
+function addBidder() {
+  const name  = document.getElementById('new-bidder-name').value.trim();
+  const phone = document.getElementById('new-bidder-phone').value.trim().replace(/\D/g,'').slice(-8);
+  if (!name || !phone) { showToast('أدخل الاسم ورقم الهاتف', 'error'); return; }
+  const loginKey = generateLoginKey();
+  biddersRef.child(phone).set({
+    name, phone, loginKey, isVerified: true, isOnline: false, createdAt: Date.now()
+  }).then(() => {
+    document.getElementById('new-bidder-name').value = '';
+    document.getElementById('new-bidder-phone').value = '';
+    showToast(`✅ تمت إضافة ${name} — المفتاح: ${loginKey}`, 'success');
+  }).catch(() => showToast('خطأ في الإضافة', 'error'));
+}
+
+window.openEditBidder = function(key) {
+  biddersRef.child(key).once('value', snap => {
+    const b = snap.val(); if (!b) return;
+    document.getElementById('edit-bidder-key').value     = key;
+    document.getElementById('edit-bidder-name').value    = b.name || '';
+    document.getElementById('edit-bidder-phone').value   = b.phone || key;
+    document.getElementById('edit-bidder-key-val').value = b.loginKey || '';
+    openModal('modal-edit-bidder');
+  });
+};
+
+window.generateNewKeyForEdit = function() {
+  document.getElementById('edit-bidder-key-val').value = generateLoginKey();
+};
+
+function saveEditBidder() {
+  const key   = document.getElementById('edit-bidder-key').value;
+  const name  = document.getElementById('edit-bidder-name').value.trim();
+  const phone = document.getElementById('edit-bidder-phone').value.trim().replace(/\D/g,'').slice(-8);
+  const lkey  = document.getElementById('edit-bidder-key-val').value.trim();
+  if (!name || !phone) { showToast('أدخل البيانات كاملة', 'error'); return; }
+  biddersRef.child(key).update({ name, phone, loginKey: lkey || undefined })
+    .then(() => { closeModal('modal-edit-bidder'); showToast('✅ تم تحديث البيانات', 'success'); })
+    .catch(() => showToast('خطأ في التحديث', 'error'));
+}
+
+window.deleteBidder = function(key, name) {
+  showConfirm('حذف مزايد', `هل تريد حذف "${name}" من القائمة؟`, () => {
+    biddersRef.child(key).remove().then(() => showToast('تم حذف المزايد', 'warn'));
+  }, 'نعم، احذف');
+};
+
+/* ══════════════ PENDING REQUESTS ══════════════ */
+function listenPendingRequests() {
+  if (!activationRef) return;
+  activationRef.on('value', snap => {
+    const data  = snap.val();
+    const list  = document.getElementById('pending-approvals-list');
+    const count = document.getElementById('pending-count');
+    if (!list) return;
+    if (!data) {
+      list.innerHTML = '<div class="empty-state">لا توجد طلبات معلقة</div>';
+      if (count) count.textContent = '0';
+      return;
+    }
+    const entries = Object.entries(data);
+    if (count) count.textContent = entries.length;
+    list.innerHTML = entries.map(([key, req]) => `
+      <div class="pending-item">
+        <div class="pending-info">
+          <div class="pending-name">👤 ${req.name || '—'}</div>
+          <div class="pending-phone">📞 ${req.phone || key}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${req.type === 'resetKey' ? '🔑 طلب مفتاح جديد' : '📝 طلب تسجيل'}</div>
+          <div class="pending-actions">
+            <button class="btn btn-sage btn-sm" onclick="approveActivation('${key}')">✅ قبول</button>
+            <button class="btn btn-red btn-sm" onclick="rejectActivation('${key}')">❌ رفض</button>
+          </div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+window.approveActivation = function(key) {
+  activationRef.child(key).once('value').then(snap => {
+    const req = snap.val(); if (!req) return;
+    const loginKey = generateLoginKey();
+    const phoneKey = String(req.phone || key).replace(/\D/g,'').slice(-8);
+    biddersRef.child(phoneKey).update({ loginKey, isVerified: true, isOnline: false }).then(() => {
+      activationRef.child(key).remove();
+      showToast(`✅ تمت الموافقة — المفتاح الجديد: ${loginKey}`, 'success');
+      // Send WhatsApp
+      const fullPhone = '968' + phoneKey;
+      const msg = `مرحباً ${req.name||''} 👋\nتم تفعيل حسابك في منصة قعد فلج بطين 🌴\n\n🔐 مفتاح الدخول الجديد:\n${loginKey}\n\n⚠️ احتفظ به ولا تشاركه مع أحد.`;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const url = isMobile
+        ? `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+        : `https://web.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    });
+  });
+};
+
+window.rejectActivation = function(key) {
+  showConfirm('رفض الطلب', 'هل تريد رفض هذا الطلب؟', async () => {
+    const snap = await activationRef.child(key).once('value');
+    const req  = snap.val();
+    if (req) await db.ref('activationHistory').push({ ...req, status:'rejected', actionAt: Date.now() });
+    await activationRef.child(key).remove();
+    showToast('تم رفض الطلب', 'warn');
+  }, 'نعم، ارفض');
+};
+
+/* ══════════════ ADMIN SETTINGS ══════════════ */
+function changeAdminCode() {
+  const cur = document.getElementById('cur-code').value.trim();
+  const nw  = document.getElementById('new-code').value.trim();
+  const con = document.getElementById('con-code').value.trim();
+  if (!cur||!nw||!con) { showToast('أدخل جميع الحقول', 'error'); return; }
+  if (nw !== con) { showToast('الرمز الجديد غير متطابق', 'error'); return; }
+  if (nw.length < 6) { showToast('الرمز يجب أن يكون 6 أحرف على الأقل', 'error'); return; }
+  db.ref('adminCode').once('value', snap => {
+    const stored = snap.val() || DEFAULT_CODE;
+    if (cur !== stored) { showToast('الرمز الحالي غير صحيح', 'error'); return; }
+    db.ref('adminCode').set(nw).then(() => {
+      showToast('✅ تم تغيير الرمز بنجاح', 'success');
+      ['cur-code','new-code','con-code'].forEach(id => document.getElementById(id).value = '');
+    });
+  });
+}
+
+function saveAdminPhone() {
+  const phone = document.getElementById('admin-phone-input').value.trim();
+  if (phone.length < 8) { showToast('أدخل رقم هاتف صحيح', 'error'); return; }
+  db.ref('settings').update({ adminPhone: phone })
+    .then(() => showToast('✅ تم تحديث رقم الإدارة', 'success'))
+    .catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+/* ══════════════ QUICK BID BUTTONS ══════════════ */
+function loadQuickBids() {
+  if (!db) return;
+  db.ref('settings/quickBids').on('value', snap => {
+    const vals = snap.val() || { b1: 0.2, b2: 0.5, b3: 1 };
+    const b1 = Number(vals.b1) || 0.2;
+    const b2 = Number(vals.b2) || 0.5;
+    const b3 = Number(vals.b3) || 1;
+    // تحديث حقول الإعدادات
+    const i1 = document.getElementById('qb-1');
+    const i2 = document.getElementById('qb-2');
+    const i3 = document.getElementById('qb-3');
+    if (i1) i1.value = b1;
+    if (i2) i2.value = b2;
+    if (i3) i3.value = b3;
+    // تحديث المعاينة
+    updateQBPreview(b1, b2, b3);
+    // تحديث أزرار المزايد
+    applyQuickBidButtons(b1, b2, b3);
+  });
+}
+
+function updateQBPreview(b1, b2, b3) {
+  const p1 = document.getElementById('qb-preview-1');
+  const p2 = document.getElementById('qb-preview-2');
+  const p3 = document.getElementById('qb-preview-3');
+  if (p1) p1.textContent = '+' + Number(b1).toFixed(3).replace(/\.?0+$/, '');
+  if (p2) p2.textContent = '+' + Number(b2).toFixed(3).replace(/\.?0+$/, '');
+  if (p3) p3.textContent = '+' + Number(b3).toFixed(3).replace(/\.?0+$/, '');
+}
+
+function applyQuickBidButtons(b1, b2, b3) {
+  const btns = document.querySelectorAll('.quick-btn');
+  const vals = [b1, b2, b3];
+  btns.forEach((btn, i) => {
+    if (vals[i] !== undefined) {
+      const v = Number(vals[i]);
+      btn.textContent = '+' + v.toFixed(3).replace(/\.?0+$/, '');
+      btn.onclick = () => quickBid(v);
+    }
+  });
+}
+
+function saveQuickBids() {
+  const b1 = parseFloat(document.getElementById('qb-1').value);
+  const b2 = parseFloat(document.getElementById('qb-2').value);
+  const b3 = parseFloat(document.getElementById('qb-3').value);
+  if (isNaN(b1) || isNaN(b2) || isNaN(b3) || b1 <= 0 || b2 <= 0 || b3 <= 0) {
+    showToast('أدخل قيم صحيحة وأكبر من صفر', 'error'); return;
+  }
+  db.ref('settings/quickBids').set({ b1, b2, b3 })
+    .then(() => showToast('✅ تم حفظ أزرار المزايدة السريعة', 'success'))
+    .catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+/* ══════════════ FINANCE ══════════════ */
+function loadFinanceData() {
+  const selectedName = document.getElementById('search-fin-name').value;
+  const body    = document.getElementById('finance-body');
+  const summary = document.getElementById('finance-summary');
+  if (!db || !body) return;
+
+  db.ref('history').on('value', snap => {
+    const data = snap.val();
+    if (!data) {
+      body.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات مالية</td></tr>';
+      return;
+    }
+
+    // السجل المالي يعرض فقط السجلات غير المُبرأة
+    const active = Object.fromEntries(
+      Object.entries(data).filter(([,item]) => !item.cleared)
+    );
+    updateBiddersList(active);
+
+    let html = '', totalRemaining = 0;
+    Object.entries(active).forEach(([key, item]) => {
+      if (!item.winner) return;
+      if (selectedName && item.winner !== selectedName) return;
+
+      const amount    = Number(item.amount||0);
+      const paid      = Number(item.paidAmount||0);
+      const remaining = amount - paid;
+      const dateStr   = item.dateKey
+        ? new Date(item.dateKey+'T12:00:00').toLocaleDateString('ar-OM')
+        : (item.timestamp ? new Date(item.timestamp).toLocaleDateString('ar-OM') : '—');
+      totalRemaining += remaining;
+      const typeTag = item.isManual
+        ? '<span style="font-size:10px;background:#dff0f9;color:var(--water);border-radius:8px;padding:2px 6px;font-weight:800">يدوي</span>'
+        : '';
+
+      html += `<tr>
+        <td>${dateStr}</td>
+        <td>${item.plot||'—'} ${typeTag}</td>
+        <td>${item.winner}</td>
+        <td>${amount.toFixed(3)}</td>
+        <td><input class="fin-paid-input" type="number" value="${paid.toFixed(3)}" step="0.001"
+            onchange="updatePaidAmount('${key}',this.value,${amount})"></td>
+        <td class="${remaining>0?'fin-rem-pos':'fin-rem-zero'}">${remaining.toFixed(3)}</td>
+        <td><button onclick="deleteFinanceRecord('${key}','${(item.winner||'').replace(/'/g,'`')}','${(item.plot||'').replace(/'/g,'`')}')"
+            style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:3px">🗑️</button></td>
+      </tr>`;
+    });
+
+    body.innerHTML = html || '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات غير مسددة</td></tr>';
+    if (summary) {
+      summary.textContent = `إجمالي المستحقات: ${totalRemaining.toFixed(3)} ر.ع`;
+      summary.style.display = totalRemaining > 0 ? 'block' : 'none';
+    }
+  });
+}
+
+function updateBiddersList(data) {
+  const select = document.getElementById('search-fin-name');
+  const cur    = select.value;
+  const names  = new Set();
+  Object.values(data).forEach(item => { if (item.winner?.trim()) names.add(item.winner); });
+  let opts = '<option value="">— عرض الجميع —</option>';
+  Array.from(names).sort().forEach(n => {
+    opts += `<option value="${n}" ${cur===n?'selected':''}>${n}</option>`;
+  });
+  select.innerHTML = opts;
+}
+
+function updatePaidAmount(key, newPaid, total) {
+  const paid = Number(newPaid);
+  if (paid >= total) {
+    db.ref('history/'+key).once('value').then(snap => {
+      const item = snap.val() || {};
+      showConfirmWithWhatsapp(
+        'سداد كامل المبلغ',
+        `تم سداد كامل المبلغ من (${item.winner||''}). هل تريد إبراء الذمة؟`,
+        () => {
+          // لا نحذف — نعلّم بـ cleared حفاظاً على السجل السنوي
+          db.ref('history/'+key).update({
+            paidAmount: total,
+            cleared: true
+          }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
+        },
+        () => sendClearanceWhatsapp(item.winner, item.phone, item.plot, total),
+        'نعم، إبراء الذمة'
+      );
+    });
+    return;
+  }
+  // تحديث جزئي — نحسب المتبقي لحظياً بدون تخزينه
+  db.ref('history/'+key).update({
+    paidAmount: paid
+  }).then(() => showToast('تم تحديث المبلغ', 'success'));
+}
+
+function deleteFinanceRecord(key, winner, plot) {
+  db.ref('history/'+key).once('value').then(snap => {
+    const item = snap.val() || {};
+    showConfirmWithWhatsapp(
+      'تأكيد الاستلام',
+      `هل تأكد استلام المبلغ من (${winner}) عن (${plot})؟`,
+      () => {
+        db.ref('history/'+key).update({
+          paidAmount: item.amount || 0,
+          cleared: true
+        }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
+      },
+      () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount),
+      'نعم، تم الاستلام'
+    );
+  });
+}
+
+function sendClearanceWhatsapp(winner, phone, plot, amount) {
+  if (!phone) { showToast('لا يوجد رقم هاتف لهذا المزايد', 'warn'); return; }
+  const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${winner||''} 👋\n\nنشكركم على وفائكم بسداد مستحقات ربع (${plot||''}) بقيمة (${Number(amount||0).toFixed(3)} ر.ع) في منصة قعد فلج بطين 🌴\n\nبارك الله فيكم وجزاكم خيراً على حسن تعاملكم. 🤝`;
+  openWhatsapp(phone, msg);
+}
+
+/* نافذة تأكيد مع زر واتساب منفصل */
+function showConfirmWithWhatsapp(title, msg, onYes, onWhatsapp, yesLabel='تأكيد') {
+  setText('confirm-title', title);
+  setText('confirm-msg', msg);
+  setText('confirm-yes', yesLabel);
+
+  // نضيف زر واتساب مؤقت في نافذة التأكيد
+  const actions = document.querySelector('#modal-confirm .modal-actions');
+  // إزالة أي زر واتساب قديم
+  const oldWa = document.getElementById('confirm-whatsapp-btn');
+  if (oldWa) oldWa.remove();
+
+  const waBtn = document.createElement('button');
+  waBtn.id = 'confirm-whatsapp-btn';
+  waBtn.className = 'btn btn-whatsapp';
+  waBtn.style.cssText = 'padding:12px 16px;font-size:13px;width:auto;border-radius:var(--r-sm)';
+  waBtn.innerHTML = '📱 إرسال شكر واتساب';
+  waBtn.onclick = () => { onWhatsapp(); };
+  actions.insertBefore(waBtn, actions.firstChild);
+
+  document.getElementById('confirm-yes').onclick = () => {
+    closeConfirm();
+    // تنظيف زر واتساب
+    const w = document.getElementById('confirm-whatsapp-btn');
+    if (w) w.remove();
+    onYes();
+  };
+
+  // عند الإلغاء نظّف الزر
+  const cancelBtn = document.querySelector('#modal-confirm .btn-ghost');
+  const origCancel = cancelBtn.onclick;
+  cancelBtn.onclick = () => {
+    closeConfirm();
+    const w = document.getElementById('confirm-whatsapp-btn');
+    if (w) w.remove();
+  };
+
+  openModal('modal-confirm');
+}
+
+function sendWhatsAppReminder() {
+  const name = document.getElementById('search-fin-name').value;
+  if (!name) { showToast('اختر اسم المزايد أولاً', 'error'); return; }
+  db.ref('history').once('value', snap => {
+    const data = snap.val(); let total = 0, phone = '', details = '';
+    Object.values(data||{}).forEach(item => {
+      if (item.winner === name) {
+        const rem = Number(item.remaining || (item.amount - (item.paidAmount||0)));
+        if (rem > 0) {
+          total += rem;
+          details += `\n- ربع ${item.plot}: ${rem.toFixed(3)} ر.ع`;
+          if (!phone && item.phone) phone = item.phone;
+        }
+      }
+    });
+    if (total <= 0) { showToast('لا توجد مستحقات لهذا المزايد', 'warn'); return; }
+    const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${name}\n\nنود تذكيرك بوجود مستحقات مالية متبقية من قعد فلج بطين:${details}\n\nإجمالي المبلغ: *${total.toFixed(3)} ر.ع*\n\nيرجى التكرم بالسداد. شكراً لتعاونكم.`;
+    openWhatsapp(phone, msg);
+  });
+}
+
+function exportFinancePDF() {
+  const name    = document.getElementById('search-fin-name').value;
+  const body    = document.getElementById('finance-body');
+  const summary = document.getElementById('finance-summary');
+  if (!body || body.textContent.includes('لا توجد')) { showToast('لا توجد بيانات', 'error'); return; }
+
+  let rowsHtml = '';
+  Array.from(body.rows).forEach(row => {
+    let rd = '';
+    for (let i = 0; i < 6; i++) {
+      const inp = row.cells[i]?.querySelector('input');
+      rd += `<td style="border:1px solid #eee;padding:9px">${inp ? Number(inp.value).toFixed(3) : (row.cells[i]?.innerText||'')}</td>`;
+    }
+    rowsHtml += `<tr>${rd}</tr>`;
+  });
+
+  const tpl = `<div dir="rtl" style="font-family:Cairo,Tajawal,sans-serif;padding:30px;background:#fff;color:#1e2d22">
+    <div style="text-align:center;border-bottom:3px solid #3a6b4a;padding-bottom:20px;margin-bottom:28px">
+      <h1 style="color:#3a6b4a;margin:0">نظام قعد فلج بطين</h1>
+      <h3 style="color:#555;margin:8px 0">تقرير المستحقات المالية</h3>
+      <p><strong>${name ? 'كشف مستحقات: '+name : 'الكشف العام للفلج'}</strong></p>
+      <p style="color:#8a9e91;font-size:13px">تاريخ: ${new Date().toLocaleDateString('ar-OM')}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+      <thead><tr style="background:#3a6b4a;color:white">
+        <th style="padding:10px;border:1px solid #3a6b4a">التاريخ</th>
+        <th style="padding:10px;border:1px solid #3a6b4a">الربع</th>
+        <th style="padding:10px;border:1px solid #3a6b4a">المستقعد</th>
+        <th style="padding:10px;border:1px solid #3a6b4a">المبلغ</th>
+        <th style="padding:10px;border:1px solid #3a6b4a">المدفوع</th>
+        <th style="padding:10px;border:1px solid #3a6b4a">المتبقي</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="margin-top:18px;font-size:15px;font-weight:800;color:#3a6b4a">${summary?summary.textContent:''}</div>
+    <div style="margin-top:50px;display:flex;justify-content:space-between;font-size:12px;color:#8a9e91">
+      <div><strong style="color:#3a6b4a">وكيل أفلاج قرية بطين</strong><br><br>التوقيع: ........................</div>
+      <div style="text-align:left">منصة قعد فلج بطين الرقمية</div>
+    </div>
+  </div>`;
+
+  showToast('جاري تجهيز التقرير...', '');
+  if (typeof html2pdf !== 'undefined') {
+    html2pdf().set({
+      margin: [18,18], filename: name ? `تقرير_${name}.pdf` : 'كشف_المستحقات.pdf',
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+    }).from(tpl).save().then(() => showToast('تم التصدير بنجاح ✅', 'success'))
+      .catch(() => showToast('فشل التصدير', 'error'));
+  } else {
+    const w = window.open('','_blank');
+    if (w) { w.document.write(tpl); w.document.close(); }
+  }
+}
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   NEW FEATURES: ASSISTANT + MANUAL ENTRY + ANNUAL
+══════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════
+   TOGGLE: ATTENDANCE & ITEMS
+══════════════════════════════════════════ */
+let attVisible = true, itemsVisible = true;
+const cardVisState = {};
+
+function toggleAttendance() {
+  attVisible = !attVisible;
+  const list = document.getElementById('admin-attendance-list');
+  const btn  = document.getElementById('att-toggle-btn');
+  if (list) list.style.display = attVisible ? '' : 'none';
+  if (btn)  btn.textContent    = attVisible ? 'إخفاء ▲' : 'إظهار ▼';
+}
+
+function toggleItemsList() {
+  itemsVisible = !itemsVisible;
+  const wrapper = document.getElementById('items-list-wrapper');
+  const btn     = document.getElementById('items-toggle-btn');
+  if (wrapper) wrapper.style.display = itemsVisible ? '' : 'none';
+  if (btn)     btn.textContent       = itemsVisible ? 'إخفاء ▲' : 'إظهار ▼';
+}
+
+/* دالة عامة للطي/الفرد لأي بطاقة */
+function toggleCard(id) {
+  const body = document.getElementById('toggle-body-' + id);
+  const btn  = document.getElementById('toggle-btn-' + id);
+  if (!body) return;
+  const vis = cardVisState[id] !== false; // true = visible by default
+  cardVisState[id] = !vis;
+  body.style.display = !vis ? '' : 'none';
+  if (btn) btn.textContent = !vis ? 'إخفاء ▲' : 'إظهار ▼';
+}
+
+/* ══════════════════════════════════════════
+   WHATSAPP — يعمل على الجوال والحاسب
+══════════════════════════════════════════ */
+function openWhatsapp(phone, msg) {
+  const clean = String(phone).replace(/\D/g,'');
+  const final = clean.startsWith('968') ? clean : '968' + clean;
+  const encoded = encodeURIComponent(msg);
+  /* على الحاسب نفتح web.whatsapp.com مباشرةً إذا لم يكن جوالاً */
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const url = isMobile
+    ? `https://wa.me/${final}?text=${encoded}`
+    : `https://web.whatsapp.com/send?phone=${final}&text=${encoded}`;
+  window.open(url, '_blank');
+}
+
+/* ══════════════════════════════════════════
+   ASSISTANT: تغيير رمز الدخول الخاص
+══════════════════════════════════════════ */
+function changeAssistantOwnCode() {
+  const cur = document.getElementById('asst-cur-code').value.trim();
+  const nw  = document.getElementById('asst-new-code').value.trim();
+  const cn  = document.getElementById('asst-con-code').value.trim();
+  if (!cur || !nw || !cn) { showToast('أدخل جميع الحقول', 'error'); return; }
+  if (nw !== cn) { showToast('الرمزان الجديدان غير متطابقين', 'error'); return; }
+  if (nw.length < 4) { showToast('الرمز يجب أن يكون 4 أحرف على الأقل', 'error'); return; }
+  db.ref('settings/assistantCode').once('value', snap => {
+    const stored = snap.val();
+    if (!stored || cur !== String(stored)) { showToast('❌ الرمز الحالي غير صحيح', 'error'); return; }
+    db.ref('adminCode').once('value', snapA => {
+      if (nw === (snapA.val() || DEFAULT_CODE)) { showToast('لا يمكن أن يكون مطابقاً لرمز المشرف', 'error'); return; }
+      db.ref('settings/assistantCode').set(nw).then(() => {
+        document.getElementById('asst-cur-code').value = '';
+        document.getElementById('asst-new-code').value = '';
+        document.getElementById('asst-con-code').value = '';
+        showToast('✅ تم تغيير رمز المساعد بنجاح', 'success');
+      });
+    });
+  });
+}
+
+/* ══════════════════════════════════════════
+   ANNUAL RECORDS — يقرأ فقط confirmed:true
+══════════════════════════════════════════ */
+let annualAllYears = {};
+let annualRawByDate = {}; // تفاصيل كل يوم للتقرير اليومي
+
+function loadAnnualRecords() {
+  const container = document.getElementById('annual-records-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="empty-state">جاري التحميل...</div>';
+  closeDailyReport();
+
+  db.ref('history').once('value', snap => {
+    const data = snap.val();
+    if (!data) { container.innerHTML = '<div class="empty-state">لا توجد سجلات بعد</div>'; return; }
+
+    // فقط السجلات المؤكدة (confirmed:true)
+    const confirmed = Object.entries(data).filter(([,v]) => v.confirmed);
+    if (!confirmed.length) {
+      container.innerHTML = '<div class="empty-state">لا توجد سجلات مؤكدة — قد تحتاج ترحيل البيانات القديمة من تبويب النسخ</div>';
+      return;
+    }
+
+    // تجميع حسب dateKey أو timestamp
+    const byDate = {};
+    annualRawByDate = {};
+    confirmed.forEach(([key, item]) => {
+      const dk = item.dateKey || (() => {
+        const d = new Date(item.timestamp);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      })();
+      if (!byDate[dk]) byDate[dk] = 0;
+      byDate[dk] += Number(item.amount)||0;
+      if (!annualRawByDate[dk]) annualRawByDate[dk] = [];
+      annualRawByDate[dk].push({ ...item, key });
+    });
+
+    // تجميع حسب السنة
+    annualAllYears = {};
+    Object.entries(byDate).forEach(([dk, total]) => {
+      const y = dk.split('-')[0];
+      if (!annualAllYears[y]) annualAllYears[y] = [];
+      annualAllYears[y].push({ dateKey: dk, total });
+    });
+
+    const years = Object.keys(annualAllYears).sort((a,b) => b-a);
+    const currentYear = new Date().getFullYear().toString();
+    const selectedYear = years.includes(currentYear) ? currentYear : years[0];
+
+    const yearBtns = years.map(y =>
+      `<button onclick="showAnnualYear('${y}')" id="annual-yr-btn-${y}"
+        style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--border-md);
+               background:${y===selectedYear?'var(--sage)':'var(--surface2)'};
+               color:${y===selectedYear?'var(--white)':'var(--text-mid)'};
+               font-family:'Tajawal',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:.2s">
+        ${y}
+      </button>`
+    ).join('');
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">اختر السنة</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">${yearBtns}</div>
+      </div>
+      <div id="annual-year-content"></div>`;
+
+    showAnnualYear(selectedYear);
+  });
+}
+
+function showAnnualYear(year) {
+  Object.keys(annualAllYears).forEach(y => {
+    const btn = document.getElementById('annual-yr-btn-'+y);
+    if (!btn) return;
+    btn.style.background  = y===year ? 'var(--sage)' : 'var(--surface2)';
+    btn.style.color       = y===year ? 'var(--white)' : 'var(--text-mid)';
+    btn.style.borderColor = y===year ? 'var(--sage)'  : 'var(--border-md)';
+  });
+
+  const rows = (annualAllYears[year]||[]).sort((a,b) => b.dateKey.localeCompare(a.dateKey));
+  const yearTotal = rows.reduce((s,r) => s+r.total, 0);
+  const content = document.getElementById('annual-year-content');
+  if (!content) return;
+  if (!rows.length) { content.innerHTML = '<div class="empty-state">لا توجد بيانات</div>'; return; }
+
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:14px;font-weight:900;color:var(--sage)">📅 سنة ${year} — ${rows.length} يوم مزايدة</div>
+      <button class="btn btn-water btn-sm" onclick="exportAnnualPDF('${year}')">📄 PDF السنة</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="annual-table">
+        <thead><tr>
+          <th>التاريخ</th>
+          <th>إجمالي اليوم (ر.ع)</th>
+          <th>تقرير</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r => `<tr>
+            <td style="text-align:right">
+              ${new Date(r.dateKey+'T12:00:00').toLocaleDateString('ar-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+            </td>
+            <td style="font-weight:800;color:var(--sage)">${r.total.toFixed(3)}</td>
+            <td>
+              <button onclick="showDailyReport('${r.dateKey}')"
+                style="background:var(--sage-pale);border:1px solid var(--sage-lt);
+                       color:var(--sage);border-radius:var(--r-sm);padding:5px 10px;
+                       font-family:'Tajawal',sans-serif;font-size:11px;font-weight:800;cursor:pointer">
+                📋 تقرير
+              </button>
+            </td>
+          </tr>`).join('')}
+          <tr class="annual-total-row">
+            <td>إجمالي سنة ${year}</td>
+            <td>${yearTotal.toFixed(3)} ر.ع</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   DAILY REPORT — من السجل السنوي
+══════════════════════════════════════════ */
+let currentDailyReportDate = '';
+
+function showDailyReport(dateKey) {
+  currentDailyReportDate = dateKey;
+  const rows = annualRawByDate[dateKey] || [];
+  const panel = document.getElementById('daily-report-panel');
+  const titleEl = document.getElementById('daily-report-title');
+  const body = document.getElementById('daily-report-body');
+  if (!panel || !body) return;
+
+  const label = new Date(dateKey+'T12:00:00').toLocaleDateString('ar-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if (titleEl) titleEl.textContent = `📋 تقرير ${label}`;
+
+  let total = 0;
+  const rowsHtml = rows.map(item => {
+    const amt = Number(item.amount||0);
+    total += amt;
+    return `<tr>
+      <td style="text-align:right;font-weight:700">${item.plot||'—'}</td>
+      <td style="text-align:right">${item.winner||'—'}</td>
+      <td style="font-weight:900;color:var(--sage)">${amt.toFixed(3)}</td>
+      <td>${item.isManual
+        ? '<span style="font-size:10px;background:#dff0f9;color:var(--water);border-radius:8px;padding:2px 7px;font-weight:800">يدوي ✍️</span>'
+        : '<span style="font-size:10px;background:var(--sage-pale);color:var(--sage);border-radius:8px;padding:2px 7px;font-weight:800">مزايدة</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = rowsHtml + `
+    <tr style="background:var(--sage-pale);font-weight:900;color:var(--sage);border-top:2px solid var(--sage-lt)">
+      <td colspan="2" style="padding:10px;text-align:center">المجموع الكلي</td>
+      <td style="padding:10px;color:var(--sage)">${total.toFixed(3)} ر.ع</td>
+      <td>—</td>
+    </tr>`;
+
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function closeDailyReport() {
+  const panel = document.getElementById('daily-report-panel');
+  if (panel) panel.style.display = 'none';
+  currentDailyReportDate = '';
+}
+
+function exportDailyReportPDF() {
+  if (!currentDailyReportDate) return;
+  const rows = annualRawByDate[currentDailyReportDate] || [];
+  const label = new Date(currentDailyReportDate+'T12:00:00')
+    .toLocaleDateString('ar-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let total = 0;
+
+  const rowsHtml = rows.map(item => {
+    const amt = Number(item.amount||0);
+    total += amt;
+    return `<tr>
+      <td style="padding:9px 8px;border:1px solid #eee;font-weight:700">${item.plot||'—'}</td>
+      <td style="padding:9px 8px;border:1px solid #eee">${item.winner||'—'}</td>
+      <td style="padding:9px 8px;border:1px solid #eee;font-weight:900;color:#3a6b4a">${amt.toFixed(3)} ر.ع</td>
+      <td style="padding:9px 8px;border:1px solid #eee">${item.isManual?'يدوي ✍️':'مزايدة'}</td>
+    </tr>`;
+  }).join('');
+
+  const tpl = `<div dir="rtl" style="font-family:Cairo,Tajawal,sans-serif;padding:30px;background:#fff;color:#1e2d22">
+    <div style="text-align:center;border-bottom:3px solid #3a6b4a;padding-bottom:20px;margin-bottom:28px">
+      <h1 style="color:#3a6b4a;margin:0;font-size:22px">تقرير يوم المزايدة</h1>
+      <h3 style="color:#555;margin:8px 0">قعد فلج بطين</h3>
+      <p style="color:#8a9e91;margin:0;font-size:14px">${label}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:right">
+      <thead><tr style="background:#3a6b4a;color:white">
+        <th style="padding:10px 8px;border:1px solid #3a6b4a">الربع</th>
+        <th style="padding:10px 8px;border:1px solid #3a6b4a">الفائز</th>
+        <th style="padding:10px 8px;border:1px solid #3a6b4a">المبلغ</th>
+        <th style="padding:10px 8px;border:1px solid #3a6b4a">النوع</th>
+      </tr></thead>
+      <tbody>${rowsHtml}
+        <tr style="background:#d4ead9;font-weight:900;color:#3a6b4a">
+          <td colspan="2" style="padding:11px 8px;border:1px solid #3a6b4a;text-align:center">المجموع الكلي</td>
+          <td style="padding:11px 8px;border:1px solid #3a6b4a">${total.toFixed(3)} ر.ع</td>
+          <td style="padding:11px 8px;border:1px solid #3a6b4a">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:50px;display:flex;justify-content:space-between;font-size:12px;color:#8a9e91">
+      <div><strong style="color:#3a6b4a">وكيل أفلاج قرية بطين</strong><br><br>التوقيع: ........................</div>
+      <div style="text-align:left">منصة قعد فلج بطين الرقمية</div>
+    </div>
+  </div>`;
+
+  showToast('جاري تجهيز التقرير...','');
+  if (typeof html2pdf !== 'undefined') {
+    const el = document.createElement('div');
+    el.innerHTML = tpl;
+    html2pdf().set({
+      margin:[15,15], filename:`تقرير_${currentDailyReportDate}.pdf`,
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:3,useCORS:true},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    }).from(el).save().then(() => showToast('✅ تم تصدير التقرير','success'));
+  } else {
+    const w = window.open('','_blank');
+    if (w) { w.document.write(tpl); w.document.close(); }
+  }
+}
+
+/* ══════════════════════════════════════════
+   MIGRATE — ترحيل السجلات القديمة
+══════════════════════════════════════════ */
+async function migrateOldRecords() {
+  const statusEl = document.getElementById('migration-status');
+  if (statusEl) statusEl.textContent = 'جاري الفحص...';
+
+  try {
+    const snap = await db.ref('history').once('value');
+    const data = snap.val();
+    if (!data) { if (statusEl) statusEl.textContent = 'لا توجد سجلات للترحيل.'; return; }
+
+    const needsMigration = Object.entries(data).filter(([,v]) => !v.confirmed && v.winner && v.amount);
+    if (!needsMigration.length) {
+      if (statusEl) statusEl.textContent = '✅ جميع السجلات محدّثة — لا يوجد شيء للترحيل.';
+      return;
+    }
+
+    if (statusEl) statusEl.textContent = `جاري ترحيل ${needsMigration.length} سجل...`;
+
+    const updates = {};
+    needsMigration.forEach(([key, item]) => {
+      updates[`history/${key}/confirmed`] = true;
+      // أضف dateKey إن لم يكن موجوداً
+      if (!item.dateKey && item.timestamp) {
+        const d = new Date(item.timestamp);
+        updates[`history/${key}/dateKey`] =
+          `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+    });
+
+    await db.ref().update(updates);
+    if (statusEl) statusEl.textContent = `✅ تم ترحيل ${needsMigration.length} سجل بنجاح.`;
+    showToast(`✅ تم ترحيل ${needsMigration.length} سجل`, 'success');
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '❌ خطأ: ' + e.message;
+  }
+}
+
+/* ══════════════════════════════════════════
+   BACKUP / RESTORE / EXCEL
+══════════════════════════════════════════ */
+async function exportBackupJSON() {
+  const statusEl = document.getElementById('backup-status');
+  if (statusEl) statusEl.textContent = 'جاري جلب البيانات...';
+  try {
+    const snap = await db.ref('/').once('value');
+    const data = snap.val();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const d    = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `backup_qad_falaj_${d}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    if (statusEl) statusEl.textContent = `✅ تم التحميل — ${d}`;
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '❌ فشل التحميل: ' + e.message;
+  }
+}
+
+let restoreData = null;
+function previewRestore(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      restoreData = JSON.parse(e.target.result);
+      const preview = document.getElementById('restore-preview');
+      const confirmBtn = document.getElementById('restore-confirm-btn');
+      const keys = Object.keys(restoreData);
+      preview.innerHTML = `<strong>محتوى الملف:</strong><br>${keys.map(k=>
+        `• ${k}: ${typeof restoreData[k] === 'object' ? Object.keys(restoreData[k]||{}).length+' سجل' : restoreData[k]}`
+      ).join('<br>')}`;
+      preview.style.display = 'block';
+      confirmBtn.style.display = '';
+    } catch(err) {
+      showToast('❌ ملف JSON غير صالح', 'error');
+      restoreData = null;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmRestore() {
+  if (!restoreData) return;
+  showConfirm(
+    '⚠️ تأكيد الاسترجاع',
+    'سيتم استبدال جميع بيانات قاعدة البيانات الحالية بالنسخة المحفوظة. هذا الإجراء لا يمكن التراجع عنه.',
+    async () => {
+      try {
+        await db.ref('/').set(restoreData);
+        showToast('✅ تم استرجاع النسخة الاحتياطية بنجاح', 'success');
+        document.getElementById('restore-preview').style.display = 'none';
+        document.getElementById('restore-confirm-btn').style.display = 'none';
+        document.getElementById('restore-file-input').value = '';
+        restoreData = null;
+      } catch(err) {
+        showToast('❌ فشل الاسترجاع: ' + err.message, 'error');
+      }
+    },
+    'نعم، استرجع الآن'
+  );
+}
+
+async function exportExcelSheet(section) {
+  const snap = await db.ref(section === 'bids' ? 'bids' : section).once('value');
+  const raw  = snap.val();
+  if (!raw) { showToast('لا توجد بيانات في هذا القسم', 'warn'); return; }
+
+  let rows = [], headers = [];
+
+  if (section === 'bidders') {
+    headers = ['الهاتف','الاسم','مفتاح الدخول','متصل','تاريخ الإنشاء'];
+    Object.entries(raw).forEach(([k,v]) => rows.push([
+      v.phone||k, v.name||'', v.loginKey||'',
+      v.isOnline?'نعم':'لا',
+      v.createdAt ? new Date(v.createdAt).toLocaleDateString('ar-OM') : ''
+    ]));
+  } else if (section === 'history') {
+    headers = ['التاريخ','الربع','الفائز','الهاتف','المبلغ','المدفوع','المتبقي','النوع'];
+    Object.values(raw).forEach(v => rows.push([
+      v.timestamp ? new Date(v.timestamp).toLocaleDateString('ar-OM') : '',
+      v.plot||'', v.winner||'', v.phone||'',
+      Number(v.amount||0).toFixed(3),
+      Number(v.paidAmount||0).toFixed(3),
+      (Number(v.amount||0)-Number(v.paidAmount||0)).toFixed(3),
+      v.isManual ? 'يدوي' : 'مزايدة'
+    ]));
+  } else if (section === 'bids') {
+    headers = ['التاريخ','الربع','المزايد','الهاتف','المبلغ','وقت المزايدة'];
+    Object.entries(raw).forEach(([date, plots]) => {
+      Object.entries(plots||{}).forEach(([plot, bids]) => {
+        Object.values(bids||{}).forEach(b => rows.push([
+          date, plot.replace(/_/g,' '), b.name||'', b.phone||'',
+          Number(b.amount||0).toFixed(3),
+          b.ts ? new Date(b.ts).toLocaleTimeString('ar-OM') : ''
+        ]));
+      });
+    });
+  } else if (section === 'items') {
+    headers = ['المفتاح','اسم الربع'];
+    Object.entries(raw).forEach(([k,v]) => rows.push([k, typeof v==='string'?v:(v.name||k)]));
+  }
+
+  /* بناء CSV وتحميله كـ Excel */
+  const BOM = '\uFEFF';
+  const csv = BOM + [headers, ...rows].map(r =>
+    r.map(cell => `"${String(cell||'').replace(/"/g,'""')}"`).join(',')
+  ).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const d    = new Date().toISOString().slice(0,10);
+  const names = {bidders:'المزايدون', history:'السجلات_المالية', bids:'سجل_المزايدات', items:'الربوع'};
+  a.href = url; a.download = `${names[section]}_${d}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ تم التصدير بنجاح', 'success');
+}
+
+async function exportBackupExcel() {
+  /* تصدير كل الأقسام في ملف واحد بعدة أوراق — نستخدم CSV منفصلة */
+  showToast('جاري التصدير...', '');
+  await exportExcelSheet('bidders');
+  await new Promise(r => setTimeout(r, 400));
+  await exportExcelSheet('history');
+  await new Promise(r => setTimeout(r, 400));
+  await exportExcelSheet('bids');
+  showToast('✅ تم تصدير جميع الملفات', 'success');
+}
+
+/* ══════════════════════════════════════════
+   LOGIN TYPE SWITCHER (Admin / Assistant)
+══════════════════════════════════════════ */
+let selectedLoginType = 'admin'; // default
+
+function setLoginType(type) {
+  selectedLoginType = type;
+  const isAdmin = type === 'admin';
+
+  // تحديث الأزرار
+  const adminBtn = document.getElementById('login-type-admin');
+  const assistBtn = document.getElementById('login-type-assistant');
+
+  if (adminBtn) {
+    adminBtn.style.background    = isAdmin ? 'var(--sage)' : 'var(--surface2)';
+    adminBtn.style.color         = isAdmin ? 'var(--white)' : 'var(--text-mid)';
+    adminBtn.style.borderColor   = isAdmin ? 'var(--sage)' : 'var(--border-md)';
+  }
+  if (assistBtn) {
+    assistBtn.style.background   = !isAdmin ? 'var(--water)' : 'var(--surface2)';
+    assistBtn.style.color        = !isAdmin ? 'var(--white)' : 'var(--text-mid)';
+    assistBtn.style.borderColor  = !isAdmin ? 'var(--water)' : 'var(--border-md)';
+  }
+
+  // تحديث النصوص
+  setText('admin-login-icon',    isAdmin ? '🔐' : '🤝');
+  setText('admin-login-heading', isAdmin ? 'لوحة المشرف' : 'دخول المساعد');
+  setText('admin-login-sub',     isAdmin ? 'أدخل رمز المشرف السري للمتابعة' : 'أدخل رمز المساعد للمتابعة');
+  setText('admin-code-label',    isAdmin ? 'رمز المشرف' : 'رمز المساعد');
+
+  // تحديث لون زر الدخول
+  const loginBtn = document.getElementById('admin-login-btn');
+  if (loginBtn) {
+    loginBtn.className = isAdmin ? 'btn btn-water' : 'btn btn-sage';
+  }
+
+  document.getElementById('admin-code-input').value = '';
+  document.getElementById('admin-code-input').focus();
+}
+
+/* ── ASSISTANT: load code ── */
+function loadAssistantCode() {
+  if (!db) return;
+  db.ref('settings/assistantCode').once('value', snap => {
+    const val = snap.val();
+    const inp = document.getElementById('assistant-code-input');
+    if (val && inp) inp.value = val;
+  });
+}
+
+function saveAssistantCode() {
+  const code = document.getElementById('assistant-code-input').value.trim();
+  if (!code || code.length < 4) { showToast('الرمز يجب أن يكون 4 أحرف على الأقل', 'error'); return; }
+  db.ref('adminCode').once('value', snap => {
+    const adminCode = snap.val() || DEFAULT_CODE;
+    if (code === adminCode) { showToast('لا يمكن أن يكون رمز المساعد مطابقاً لرمز المشرف', 'error'); return; }
+    db.ref('settings/assistantCode').set(code)
+      .then(() => showToast('✅ تم حفظ رمز المساعد', 'success'))
+      .catch(() => showToast('خطأ في الحفظ', 'error'));
+  });
+}
+
+/* ── ASSISTANT: permissions modal ── */
+function openAssistantPermsModal() {
+  db.ref('settings/assistantPermissions').once('value', snap => {
+    const perms = snap.val() || {};
+    ['auction','manualbid','bidders','items','finance','report','newday','annual'].forEach(k => {
+      const el = document.getElementById('perm-'+k);
+      if (el) el.checked = !!perms[k];
+    });
+    openModal('modal-assistant-perms');
+  });
+}
+
+function saveAssistantPerms() {
+  const perms = {};
+  ['auction','manualbid','bidders','items','finance','report','newday','annual'].forEach(k => {
+    const el = document.getElementById('perm-'+k);
+    if (el) perms[k] = el.checked;
+  });
+  db.ref('settings/assistantPermissions').set(perms)
+    .then(() => {
+      closeModal('modal-assistant-perms');
+      showToast('✅ تم حفظ الصلاحيات', 'success');
+    })
+    .catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+/* ── ASSISTANT: apply UI based on permissions ── */
+function applyAssistantUI() {
+  const fullAdmin = isAdmin && !isAssistant;
+
+  /* شارة نوع المستخدم في TopBar */
+  const sub = document.querySelector('#screen-admin .top-bar-sub');
+  if (sub) sub.textContent = fullAdmin ? 'إدارة المزايدة' : 'مساعد المشرف';
+
+  /* قسم رمز المشرف — للمشرف فقط */
+  const secAdminCode = document.getElementById('section-admin-code');
+  if (secAdminCode) secAdminCode.style.display = fullAdmin ? '' : 'none';
+
+  /* قسم إعدادات المساعد — للمشرف فقط */
+  const assistSec = document.getElementById('section-assistant-settings');
+  if (assistSec) assistSec.style.display = fullAdmin ? '' : 'none';
+
+  /* قسم تغيير رمز المساعد الخاص — للمساعد فقط */
+  const ownKey = document.getElementById('section-assistant-own-key');
+  if (ownKey) ownKey.style.display = (!fullAdmin && isAssistant) ? '' : 'none';
+
+  /* تبويب السجل السنوي */
+  const tabBtnAnnual = document.getElementById('tab-btn-annual');
+  if (tabBtnAnnual) tabBtnAnnual.style.display = (fullAdmin || assistantPerms.annual) ? '' : 'none';
+
+  /* تبويب النسخ — للمشرف فقط */
+  const tabBtnBackup = document.getElementById('tab-btn-backup');
+  if (tabBtnBackup) tabBtnBackup.style.display = fullAdmin ? '' : 'none';
+
+  if (!fullAdmin) {
+    /* قسم المزايدة اليدوية */
+    const secManual = document.getElementById('section-manualbid');
+    if (secManual) secManual.style.display = assistantPerms.manualbid ? '' : 'none';
+
+    /* قسم إدارة الربوع */
+    const secItems = document.getElementById('section-items');
+    if (secItems) secItems.style.display = assistantPerms.items ? '' : 'none';
+
+    /* تبويب المزايدين */
+    const tabBidders = document.querySelectorAll('.tab-btn')[1];
+    if (tabBidders) tabBidders.style.display = assistantPerms.bidders ? '' : 'none';
+
+    /* زر تقرير اليوم */
+    document.querySelectorAll('[data-perm="report"]').forEach(el => {
+      el.style.display = assistantPerms.report ? '' : 'none';
+    });
+
+    /* أزرار المزايدة */
+    document.querySelectorAll('[data-perm="auction"]').forEach(el => {
+      el.style.display = assistantPerms.auction ? '' : 'none';
+    });
+
+    /* زر بدء يوم جديد */
+    const btnNewday = document.getElementById('btn-newday');
+    if (btnNewday) btnNewday.style.display = assistantPerms.newday ? '' : 'none';
+
+    /* تبويب المالية */
+    const tabFinanceBtn = document.querySelectorAll('.tab-btn')[3];
+    if (tabFinanceBtn) tabFinanceBtn.style.display = assistantPerms.finance ? '' : 'none';
+
+    document.querySelectorAll('[data-perm="finance"]').forEach(el => {
+      el.style.display = assistantPerms.finance ? '' : 'none';
+    });
+  } else {
+    /* مشرف كامل — أظهر كل شيء */
+    document.querySelectorAll('[data-perm]').forEach(el => el.style.display = '');
+    document.querySelectorAll('[data-perm-section]').forEach(el => el.style.display = '');
+    document.querySelectorAll('.tab-btn').forEach(el => el.style.display = '');
+  }
+}
+
+/* ══════════════════════════════════════════
+   MANUAL FINANCE ENTRY
+══════════════════════════════════════════ */
+function openManualEntryModal() {
+  /* تعبئة قائمة الربوع */
+  const plotSel = document.getElementById('manual-plot');
+  plotSel.innerHTML = '';
+  auctionSequence.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    plotSel.appendChild(opt);
+  });
+  if (!auctionSequence.length) {
+    plotSel.innerHTML = '<option value="">لا توجد ربوع مضافة</option>';
+  }
+
+  /* تعبئة قائمة المزايدين */
+  const bidderSel = document.getElementById('manual-bidder');
+  bidderSel.innerHTML = '<option value="">جاري التحميل...</option>';
+  biddersRef.once('value', snap => {
+    const data = snap.val();
+    if (!data) { bidderSel.innerHTML = '<option value="">لا يوجد مزايدون</option>'; return; }
+    bidderSel.innerHTML = '';
+    Object.entries(data).forEach(([key, b]) => {
+      const opt = document.createElement('option');
+      opt.value = b.name; opt.dataset.phone = b.phone || key;
+      opt.textContent = b.name;
+      bidderSel.appendChild(opt);
+    });
+  });
+
+  /* تاريخ اليوم افتراضياً */
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth()+1).padStart(2,'0');
+  const dd   = String(today.getDate()).padStart(2,'0');
+  document.getElementById('manual-date').value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('manual-amount').value = '';
+
+  openModal('modal-manual-entry');
+}
+
+function saveManualEntry() {
+  const plotSel   = document.getElementById('manual-plot');
+  const bidderSel = document.getElementById('manual-bidder');
+  const amount    = parseFloat(document.getElementById('manual-amount').value);
+  const dateVal   = document.getElementById('manual-date').value;
+
+  const plot   = plotSel.value;
+  const winner = bidderSel.value;
+  const phone  = bidderSel.selectedOptions[0]?.dataset.phone || '';
+
+  if (!plot)   { showToast('اختر الربع', 'error'); return; }
+  if (!winner) { showToast('اختر المزايد', 'error'); return; }
+  if (isNaN(amount) || amount <= 0) { showToast('أدخل مبلغاً صحيحاً', 'error'); return; }
+  if (!dateVal) { showToast('اختر التاريخ', 'error'); return; }
+
+  // إصلاح فارق التوقيت — نستخدم الساعة 12 ظهراً
+  const [y,m,d] = dateVal.split('-').map(Number);
+  const timestamp = new Date(y, m-1, d, 12, 0, 0).getTime();
+  const key = Date.now().toString();
+
+  db.ref('history').child(key).set({
+    plot, winner, phone, amount,
+    timestamp,
+    dateKey: dateVal,      // حفظ التاريخ صريحاً بدون تحويل
+    paidAmount: 0,
+    confirmed:  true,      // ← يحمي السجل في السجل السنوي
+    isManual:   true
+  }).then(() => {
+    closeModal('modal-manual-entry');
+    showToast('✅ تم حفظ الإدخال اليدوي', 'success');
+    if (document.getElementById('tab-finance').style.display !== 'none') loadFinanceData();
+  }).catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+/* ══════════════════════════════════════════
+   ANNUAL RECORDS
+══════════════════════════════════════════ */
+function loadAnnualRecords() {
+  const container = document.getElementById('annual-records-container');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="empty-state">جاري التحميل...</div>';
+
+  db.ref('history').once('value', snap => {
+    const data = snap.val();
+    if (!data) {
+      container.innerHTML = '<div class="empty-state">لا توجد سجلات بعد</div>';
+      return;
+    }
+
+    /* تجميع حسب التاريخ */
+    const byDate = {};
+    Object.values(data).forEach(item => {
+      if (!item.amount || !item.timestamp) return;
+      const d = new Date(item.timestamp);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (!byDate[dateKey]) byDate[dateKey] = 0;
+      byDate[dateKey] += Number(item.amount) || 0;
+    });
+
+    /* تجميع حسب السنة */
+    const byYear = {};
+    Object.entries(byDate).forEach(([dateKey, total]) => {
+      const year = dateKey.split('-')[0];
+      if (!byYear[year]) byYear[year] = [];
+      byYear[year].push({ dateKey, total });
+    });
+
+    if (!Object.keys(byYear).length) {
+      container.innerHTML = '<div class="empty-state">لا توجد بيانات</div>';
+      return;
+    }
+
+    let html = '';
+    Object.keys(byYear).sort((a,b) => b-a).forEach(year => {
+      const rows = byYear[year].sort((a,b) => b.dateKey.localeCompare(a.dateKey));
+      const yearTotal = rows.reduce((s,r) => s+r.total, 0);
+      html += `
+      <div class="year-block">
+        <div class="year-header" onclick="toggleYearBlock(this)">
+          <div>
+            <div class="year-title">📅 سنة ${year}</div>
+            <div class="year-total">${rows.length} يوم مزايدة</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn btn-water btn-sm" style="font-size:10px;padding:6px 10px"
+              onclick="event.stopPropagation();exportAnnualPDF('${year}',${JSON.stringify(rows).replace(/"/g,"'")},${yearTotal})">
+              📄 PDF
+            </button>
+            <span class="year-arrow open">›</span>
+          </div>
+        </div>
+        <div class="year-body">
+          <div style="overflow-x:auto">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>إجمالي اليوم (ر.ع)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                <tr>
+                  <td>${new Date(r.dateKey).toLocaleDateString('ar-OM', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}</td>
+                  <td style="font-weight:800;color:var(--sage)">${r.total.toFixed(3)}</td>
+                </tr>`).join('')}
+                <tr class="annual-total-row">
+                  <td>إجمالي سنة ${year}</td>
+                  <td>${yearTotal.toFixed(3)} ر.ع</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    });
+    container.innerHTML = html;
+  });
+}
+
+function toggleYearBlock(header) {
+  const body  = header.nextElementSibling;
+  const arrow = header.querySelector('.year-arrow');
+  const isOpen = !body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function exportAnnualPDF(year) {
+  const rows = (annualAllYears[year]||[]).sort((a,b) => b.dateKey.localeCompare(a.dateKey));
+  if (!rows.length) { showToast('لا توجد بيانات لهذه السنة', 'warn'); return; }
+  const yearTotal = rows.reduce((s,r) => s+r.total, 0);
+
+  const rowsHtml = rows.map(r =>
+    `<tr>
+      <td style="padding:9px 10px;border:1px solid #eee">
+        ${new Date(r.dateKey+'T12:00:00').toLocaleDateString('ar-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+      </td>
+      <td style="padding:9px 10px;border:1px solid #eee;font-weight:800;color:#3a6b4a">
+        ${Number(r.total).toFixed(3)} ر.ع
+      </td>
+    </tr>`
+  ).join('');
+
+  const tpl = `<div dir="rtl" style="font-family:Cairo,Tajawal,sans-serif;padding:30px;background:#fff;color:#1e2d22">
+    <div style="text-align:center;border-bottom:3px solid #3a6b4a;padding-bottom:20px;margin-bottom:28px">
+      <h1 style="color:#3a6b4a;margin:0">نظام قعد فلج بطين</h1>
+      <h3 style="color:#555;margin:8px 0">السجل السنوي للمزايدات — ${year}</h3>
+      <p style="color:#8a9e91;font-size:13px">تاريخ الطباعة: ${new Date().toLocaleDateString('ar-OM')}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+      <thead>
+        <tr style="background:#3a6b4a;color:white">
+          <th style="padding:10px;border:1px solid #3a6b4a">التاريخ</th>
+          <th style="padding:10px;border:1px solid #3a6b4a">إجمالي اليوم (ر.ع)</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}
+        <tr style="background:#d4ead9;font-weight:900;color:#3a6b4a">
+          <td style="padding:11px 10px;border:1px solid #3a6b4a">إجمالي سنة ${year}</td>
+          <td style="padding:11px 10px;border:1px solid #3a6b4a">${yearTotal.toFixed(3)} ر.ع</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:50px;display:flex;justify-content:space-between;font-size:12px;color:#8a9e91">
+      <div><strong style="color:#3a6b4a">وكيل أفلاج قرية بطين</strong><br><br>التوقيع: ........................</div>
+      <div style="text-align:left">منصة قعد فلج بطين الرقمية</div>
+    </div>
+  </div>`;
+
+  showToast('جاري تجهيز تقرير ' + year + '...', '');
+  if (typeof html2pdf !== 'undefined') {
+    const el = document.createElement('div');
+    el.innerHTML = tpl;
+    html2pdf().set({
+      margin: [18,18], filename: `السجل_السنوي_${year}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+    }).from(el).save()
+      .then(() => showToast('✅ تم تصدير تقرير ' + year, 'success'))
+      .catch(() => showToast('فشل التصدير', 'error'));
+  } else {
+    const w = window.open('','_blank');
+    if (w) { w.document.write(tpl); w.document.close(); }
+  }
+}
+
+/* ══════════════════════════════════════════
+   DAILY REPORT — تقرير اليوم (من history/confirmed)
+══════════════════════════════════════════ */
+async function adminDailyReport() {
+  if (!isAdmin && !assistantPerms.report) { showToast('ليس لديك صلاحية', 'error'); return; }
+  // فتح تبويب السجل السنوي واختيار اليوم الحالي تلقائياً
+  adminTab('annual');
+  await new Promise(r => setTimeout(r, 300));
+  const dayKey = getTodayKey();
+  // تأكد من تحميل البيانات أولاً
+  if (!annualRawByDate[dayKey]) {
+    showToast('جاري تحميل البيانات...', '');
+    await new Promise(r => setTimeout(r, 800));
+  }
+  if (!annualRawByDate[dayKey] || !annualRawByDate[dayKey].length) {
+    showToast('لا توجد بيانات محفوظة لليوم — تأكد من حفظ النتائج أولاً', 'warn');
+    return;
+  }
+  showDailyReport(dayKey);
+  showToast('✅ تقرير اليوم جاهز', 'success');
+}
+
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('✅ SW registered');
+
+      // كشف وجود نسخة جديدة في الخلفية
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (!newSW) return;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            // يوجد تحديث — أبلغ المستخدم
+            showUpdateBanner();
+          }
+        });
+      });
+
+    }).catch(err => console.log('❌ SW error', err));
+
+    // عند تفعيل SW جديد → أعد التحميل تلقائياً
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
+  });
+}
+
+function showUpdateBanner() {
+  // إزالة أي بانر قديم
+  const old = document.getElementById('update-banner');
+  if (old) old.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.innerHTML = `
+    <span>🔄 يوجد تحديث جديد للتطبيق</span>
+    <button onclick="applyUpdate()" id="update-btn">تحديث الآن</button>
+    <button onclick="this.parentElement.remove()" id="update-later">لاحقاً</button>
+  `;
+  Object.assign(banner.style, {
+    position: 'fixed', bottom: '80px', left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#3a6b4a', color: '#fff',
+    padding: '12px 18px', borderRadius: '14px',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    fontSize: '13px', fontWeight: '700', zIndex: '99999',
+    boxShadow: '0 8px 32px rgba(30,45,34,0.25)',
+    whiteSpace: 'nowrap', maxWidth: '92vw',
+    fontFamily: 'Tajawal, sans-serif', direction: 'rtl'
+  });
+  const btnStyle = {
+    background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.4)',
+    color: '#fff', borderRadius: '8px', padding: '6px 14px',
+    cursor: 'pointer', fontFamily: 'Tajawal, sans-serif',
+    fontSize: '12px', fontWeight: '800'
+  };
+  Object.assign(banner.querySelector('#update-btn').style, btnStyle);
+  Object.assign(banner.querySelector('#update-later').style, {
+    ...btnStyle, background: 'transparent', border: 'none', opacity: '0.7'
+  });
+  document.body.appendChild(banner);
+}
+
+function applyUpdate() {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
+  }
+  // إذا لم يكن هناك controller نعيد التحميل مباشرة
+  setTimeout(() => window.location.reload(), 300);
+}
+</script>
+</body>
+</html>
