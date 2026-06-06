@@ -3868,99 +3868,8 @@ function saveManualEntry() {
 }
 
 /* ══════════════════════════════════════════
-   ANNUAL RECORDS
+   EXPORT ANNUAL PDF
 ══════════════════════════════════════════ */
-function loadAnnualRecords() {
-  const container = document.getElementById('annual-records-container');
-  if (!container || !db) return;
-  container.innerHTML = '<div class="empty-state">جاري التحميل...</div>';
-
-  db.ref('history').once('value', snap => {
-    const data = snap.val();
-    if (!data) {
-      container.innerHTML = '<div class="empty-state">لا توجد سجلات بعد</div>';
-      return;
-    }
-
-    /* تجميع حسب التاريخ */
-    const byDate = {};
-    Object.values(data).forEach(item => {
-      if (!item.amount || !item.timestamp) return;
-      const d = new Date(item.timestamp);
-      const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (!byDate[dateKey]) byDate[dateKey] = 0;
-      byDate[dateKey] += Number(item.amount) || 0;
-    });
-
-    /* تجميع حسب السنة */
-    const byYear = {};
-    Object.entries(byDate).forEach(([dateKey, total]) => {
-      const year = dateKey.split('-')[0];
-      if (!byYear[year]) byYear[year] = [];
-      byYear[year].push({ dateKey, total });
-    });
-
-    if (!Object.keys(byYear).length) {
-      container.innerHTML = '<div class="empty-state">لا توجد بيانات</div>';
-      return;
-    }
-
-    let html = '';
-    Object.keys(byYear).sort((a,b) => b-a).forEach(year => {
-      const rows = byYear[year].sort((a,b) => b.dateKey.localeCompare(a.dateKey));
-      const yearTotal = rows.reduce((s,r) => s+r.total, 0);
-      html += `
-      <div class="year-block">
-        <div class="year-header" onclick="toggleYearBlock(this)">
-          <div>
-            <div class="year-title">📅 سنة ${year}</div>
-            <div class="year-total">${rows.length} يوم مزايدة</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <button class="btn btn-water btn-sm" style="font-size:10px;padding:6px 10px"
-              onclick="event.stopPropagation();exportAnnualPDF('${year}',${JSON.stringify(rows).replace(/"/g,"'")},${yearTotal})">
-              📄 PDF
-            </button>
-            <span class="year-arrow open">›</span>
-          </div>
-        </div>
-        <div class="year-body">
-          <div style="overflow-x:auto">
-            <table class="annual-table">
-              <thead>
-                <tr>
-                  <th>التاريخ</th>
-                  <th>إجمالي اليوم (ر.ع)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map(r => `
-                <tr>
-                  <td>${new Date(r.dateKey).toLocaleDateString('ar-OM', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}</td>
-                  <td style="font-weight:800;color:var(--sage)">${r.total.toFixed(3)}</td>
-                </tr>`).join('')}
-                <tr class="annual-total-row">
-                  <td>إجمالي سنة ${year}</td>
-                  <td>${yearTotal.toFixed(3)} ر.ع</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>`;
-    });
-    container.innerHTML = html;
-  });
-}
-
-function toggleYearBlock(header) {
-  const body  = header.nextElementSibling;
-  const arrow = header.querySelector('.year-arrow');
-  const isOpen = !body.classList.contains('collapsed');
-  body.classList.toggle('collapsed', isOpen);
-  arrow.classList.toggle('open', !isOpen);
-}
-
 function exportAnnualPDF(year) {
   const rows = (annualAllYears[year]||[]).sort((a,b) => b.dateKey.localeCompare(a.dateKey));
   if (!rows.length) { showToast('لا توجد بيانات لهذه السنة', 'warn'); return; }
@@ -4008,10 +3917,10 @@ function exportAnnualPDF(year) {
     const el = document.createElement('div');
     el.innerHTML = tpl;
     html2pdf().set({
-      margin: [18,18], filename: `السجل_السنوي_${year}.pdf`,
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+      margin:[18,18], filename:`السجل_السنوي_${year}.pdf`,
+      image:{type:'jpeg',quality:1},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:'pt',format:'a4',orientation:'portrait'}
     }).from(el).save()
       .then(() => showToast('✅ تم تصدير تقرير ' + year, 'success'))
       .catch(() => showToast('فشل التصدير', 'error'));
@@ -4026,95 +3935,111 @@ function exportAnnualPDF(year) {
 ══════════════════════════════════════════ */
 async function adminDailyReport() {
   if (!isAdmin && !assistantPerms.report) { showToast('ليس لديك صلاحية', 'error'); return; }
-  // فتح تبويب السجل السنوي واختيار اليوم الحالي تلقائياً
-  adminTab('annual');
-  await new Promise(r => setTimeout(r, 300));
+
   const dayKey = getTodayKey();
-  // تأكد من تحميل البيانات أولاً
-  if (!annualRawByDate[dayKey]) {
-    showToast('جاري تحميل البيانات...', '');
-    await new Promise(r => setTimeout(r, 800));
+  showToast('جاري تحميل بيانات اليوم...', '');
+
+  try {
+    // نجلب البيانات مباشرة من Firebase — لا نعتمد على annualRawByDate
+    const snap = await db.ref('history').once('value');
+    const data = snap.val();
+
+    if (!data) {
+      showToast('لا توجد بيانات في السجل', 'warn');
+      return;
+    }
+
+    // نصفّي سجلات اليوم فقط (confirmed وغير محذوفة)
+    const todayRows = Object.entries(data)
+      .filter(([, item]) =>
+        item.confirmed &&
+        (item.dateKey === dayKey ||
+          (() => {
+            if (!item.timestamp) return false;
+            const d = new Date(item.timestamp);
+            const dk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            return dk === dayKey;
+          })()
+        )
+      )
+      .map(([key, item]) => ({ ...item, key }));
+
+    if (!todayRows.length) {
+      showToast('لا توجد بيانات محفوظة لليوم — تأكد من حفظ النتائج أولاً', 'warn');
+      return;
+    }
+
+    // تحديث annualRawByDate ثم فتح التقرير
+    if (!annualRawByDate[dayKey]) annualRawByDate[dayKey] = [];
+    annualRawByDate[dayKey] = todayRows;
+
+    // فتح تبويب السجل وعرض التقرير
+    adminTab('annual');
+    await new Promise(r => setTimeout(r, 200));
+    showDailyReport(dayKey);
+    showToast('✅ تقرير اليوم جاهز', 'success');
+
+  } catch(e) {
+    showToast('خطأ في جلب البيانات: ' + e.message, 'error');
   }
-  if (!annualRawByDate[dayKey] || !annualRawByDate[dayKey].length) {
-    showToast('لا توجد بيانات محفوظة لليوم — تأكد من حفظ النتائج أولاً', 'warn');
-    return;
-  }
-  showDailyReport(dayKey);
-  showToast('✅ تقرير اليوم جاهز', 'success');
 }
 
 </script>
 
 <script>
+/* ══════════════════════════════════════════════════
+   Service Worker — تحديث تلقائي صامت
+   عند اكتشاف نسخة جديدة يُفعَّل مباشرة ويُعاد التحميل
+══════════════════════════════════════════════════ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      console.log('✅ SW registered');
 
-      // كشف وجود نسخة جديدة في الخلفية
+    navigator.serviceWorker.register('./sw.js', {
+      updateViaCache: 'none'   // ← يجبر المتصفح على جلب sw.js دائماً من الشبكة
+    }).then(reg => {
+      console.log('✅ SW registered:', reg.scope);
+
+      // فحص فوري عند كل تشغيل للتطبيق
+      reg.update();
+
+      // عند اكتشاف SW جديد — يُفعَّل مباشرة بدون انتظار
       reg.addEventListener('updatefound', () => {
         const newSW = reg.installing;
         if (!newSW) return;
+
         newSW.addEventListener('statechange', () => {
-          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-            // يوجد تحديث — أبلغ المستخدم
-            showUpdateBanner();
+          // عندما يكون جاهزاً للتفعيل — نُفعّله فوراً
+          if (newSW.state === 'installed') {
+            console.log('🔄 نسخة جديدة — تفعيل فوري...');
+            // نرسل له SKIP_WAITING مباشرة بدون انتظار المستخدم
+            newSW.postMessage('SKIP_WAITING');
           }
         });
       });
 
-    }).catch(err => console.log('❌ SW error', err));
+    }).catch(err => console.warn('❌ SW error:', err));
 
-    // عند تفعيل SW جديد → أعد التحميل تلقائياً
+    // عند تفعيل SW جديد (controllerchange) → إعادة تحميل صامتة
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing) { refreshing = true; window.location.reload(); }
+      if (refreshing) return;
+      refreshing = true;
+      console.log('✅ SW جديد مفعّل — إعادة تحميل...');
+      window.location.reload();
     });
-  });
-}
 
-function showUpdateBanner() {
-  // إزالة أي بانر قديم
-  const old = document.getElementById('update-banner');
-  if (old) old.remove();
+    // استقبال رسالة من SW عند التفعيل (للأجهزة المثبَّت عليها التطبيق)
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'SW_ACTIVATED') {
+        console.log('✅ SW_ACTIVATED:', event.data.version);
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      }
+    });
 
-  const banner = document.createElement('div');
-  banner.id = 'update-banner';
-  banner.innerHTML = `
-    <span>🔄 يوجد تحديث جديد للتطبيق</span>
-    <button onclick="applyUpdate()" id="update-btn">تحديث الآن</button>
-    <button onclick="this.parentElement.remove()" id="update-later">لاحقاً</button>
-  `;
-  Object.assign(banner.style, {
-    position: 'fixed', bottom: '80px', left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#3a6b4a', color: '#fff',
-    padding: '12px 18px', borderRadius: '14px',
-    display: 'flex', alignItems: 'center', gap: '10px',
-    fontSize: '13px', fontWeight: '700', zIndex: '99999',
-    boxShadow: '0 8px 32px rgba(30,45,34,0.25)',
-    whiteSpace: 'nowrap', maxWidth: '92vw',
-    fontFamily: 'Tajawal, sans-serif', direction: 'rtl'
   });
-  const btnStyle = {
-    background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.4)',
-    color: '#fff', borderRadius: '8px', padding: '6px 14px',
-    cursor: 'pointer', fontFamily: 'Tajawal, sans-serif',
-    fontSize: '12px', fontWeight: '800'
-  };
-  Object.assign(banner.querySelector('#update-btn').style, btnStyle);
-  Object.assign(banner.querySelector('#update-later').style, {
-    ...btnStyle, background: 'transparent', border: 'none', opacity: '0.7'
-  });
-  document.body.appendChild(banner);
-}
-
-function applyUpdate() {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
-  }
-  // إذا لم يكن هناك controller نعيد التحميل مباشرة
-  setTimeout(() => window.location.reload(), 300);
 }
 </script>
 </body>
