@@ -357,77 +357,195 @@ select.field-input { cursor: pointer; }
 /* ══════════════════════════════════════════
    AUCTION HERO
 ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   BIDDER SCREEN — OCEAN THEME
+══════════════════════════════════════════ */
 .auction-hero {
-  background: linear-gradient(150deg, var(--sage) 0%, #2a5438 60%, #1e3d28 100%);
-  border-radius: var(--r-xl); padding: 28px 22px;
-  margin-bottom: 14px; color: var(--white); text-align: center;
-  position: relative; overflow: hidden; box-shadow: var(--sh-lg);
+  background: linear-gradient(160deg,
+    #0d4f6e 0%,
+    #0a3d5a 35%,
+    #062d45 70%,
+    #041e2f 100%
+  );
+  border-radius: var(--r-xl);
+  padding: 32px 22px 28px;
+  margin-bottom: 14px;
+  color: var(--white);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(5,50,90,0.45),
+    0 0 0 1px rgba(255,255,255,0.06) inset;
 }
+/* موجة علوية */
 .auction-hero::before {
-  content: ''; position: absolute;
-  top: -50px; right: -50px; width: 160px; height: 160px;
-  background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+  content: '';
+  position: absolute;
+  top: -70px; left: -60px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(56,189,248,0.13) 0%, transparent 70%);
   border-radius: 50%;
 }
+/* توهج سفلي ذهبي */
 .auction-hero::after {
-  content: ''; position: absolute;
-  bottom: -40px; left: -30px; width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(184,137,58,0.12) 0%, transparent 70%);
+  content: '';
+  position: absolute;
+  bottom: -50px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(251,191,36,0.1) 0%, transparent 70%);
   border-radius: 50%;
 }
+/* خط موجة ديناميكي */
+.auction-hero .wave-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(56,189,248,0.4) 30%,
+    rgba(125,211,252,0.7) 50%,
+    rgba(56,189,248,0.4) 70%,
+    transparent 100%
+  );
+}
+
 .hero-content { position: relative; z-index: 1; }
+
 .hero-plot-label {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; color: rgba(255,255,255,.55);
-  text-transform: uppercase; letter-spacing: 1px;
-  background: rgba(255,255,255,0.08); padding: 4px 12px;
-  border-radius: 20px; margin-bottom: 8px;
+  font-size: 10px; font-weight: 700;
+  color: rgba(125,211,252,0.8);
+  text-transform: uppercase; letter-spacing: 1.5px;
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.2);
+  padding: 5px 14px;
+  border-radius: 20px; margin-bottom: 10px;
 }
 .hero-plot-name {
-  font-size: 22px; font-weight: 900; color: var(--white);
-  margin-bottom: 20px; letter-spacing: .2px;
+  font-size: 24px; font-weight: 900; color: var(--white);
+  margin-bottom: 22px; letter-spacing: .3px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
-.hero-bid-label { font-size: 11px; color: rgba(255,255,255,.5); letter-spacing: .5px; margin-bottom: 4px; }
+.hero-bid-label {
+  font-size: 10px; font-weight: 700;
+  color: rgba(125,211,252,0.6);
+  letter-spacing: 1.5px; margin-bottom: 6px;
+  text-transform: uppercase;
+}
 .hero-amount {
-  font-size: 54px; font-weight: 900; color: var(--gold-lt);
+  font-size: 58px; font-weight: 900;
+  color: #fbbf24;
   line-height: 1; font-family: 'Tajawal', sans-serif;
-  letter-spacing: -2px; transition: transform .3s, color .3s;
+  letter-spacing: -2px;
+  transition: transform .3s, color .3s;
+  text-shadow:
+    0 0 30px rgba(251,191,36,0.4),
+    0 4px 16px rgba(0,0,0,0.3);
 }
-.hero-currency { font-size: 14px; color: rgba(255,255,255,.4); font-weight: 600; margin-top: 2px; }
-.hero-bidder { font-size: 13px; color: rgba(255,255,255,.65); margin-top: 10px; }
-.hero-bidder strong { color: var(--white); font-weight: 800; }
+.hero-currency {
+  font-size: 13px; font-weight: 600;
+  color: rgba(125,211,252,0.5);
+  margin-top: 4px; letter-spacing: .5px;
+}
+.hero-bidder {
+  font-size: 13px;
+  color: rgba(255,255,255,.55);
+  margin-top: 12px;
+}
+.hero-bidder strong {
+  color: rgba(125,211,252,0.9);
+  font-weight: 800;
+}
 .hero-min-pill {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; padding: 4px 12px; margin-top: 8px;
-  background: rgba(255,255,255,0.1); border-radius: 20px;
-  color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,0.12);
+  font-size: 11px; font-weight: 700;
+  padding: 5px 14px; margin-top: 10px;
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.2);
+  border-radius: 20px;
+  color: rgba(125,211,252,0.8);
 }
 .hero-timer {
-  font-size: 36px; font-weight: 900;
-  letter-spacing: 3px; margin: 16px 0 10px;
-  color: var(--white); font-family: 'Tajawal', sans-serif;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  font-size: 42px; font-weight: 900;
+  letter-spacing: 4px; margin: 18px 0 12px;
+  color: var(--white);
+  font-family: 'Tajawal', sans-serif;
+  text-shadow:
+    0 0 20px rgba(125,211,252,0.3),
+    0 2px 8px rgba(0,0,0,0.3);
 }
-.hero-timer.urgent { color: #ffb3b3; animation: urgentBlink .5s infinite; }
+.hero-timer.urgent {
+  color: #fca5a5;
+  text-shadow: 0 0 20px rgba(252,165,165,0.5);
+  animation: urgentBlink .5s infinite;
+}
 @keyframes urgentBlink { 50% { opacity: .35; } }
 
 .hero-status { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .status-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 14px; border-radius: 40px; font-size: 11px; font-weight: 700;
+  padding: 6px 16px; border-radius: 40px;
+  font-size: 11px; font-weight: 800; letter-spacing: .5px;
 }
-.pill-live  { background: rgba(122,184,144,0.2); color: #a8e6b4; border: 1px solid rgba(122,184,144,0.3); }
-.pill-ended { background: rgba(255,160,160,0.15); color: #ffcdd2; border: 1px solid rgba(255,160,160,0.2); }
-.pill-wait  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.12); }
-.live-dot   { width: 7px; height: 7px; border-radius: 50%; background: #7ab890; animation: livePulse 1.2s infinite; }
+.pill-live  {
+  background: rgba(56,189,248,0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(56,189,248,0.3);
+}
+.pill-ended {
+  background: rgba(252,165,165,0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(252,165,165,0.2);
+}
+.pill-wait  {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,.45);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56,189,248,0.8);
+  animation: livePulse 1.2s infinite;
+}
 @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
-
 .bump { animation: bumpAnim .35s cubic-bezier(.34,1.56,.64,1); }
 @keyframes bumpAnim { 0%{transform:scale(1)} 40%{transform:scale(1.13)} 100%{transform:scale(1)} }
 
-/* ══════════════════════════════════════════
-   WINNER CARD
-══════════════════════════════════════════ */
+/* ── أزرار المزايدة السريعة — نمط مائي ── */
+.quick-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 14px; }
+.quick-btn {
+  padding: 16px 8px;
+  border-radius: var(--r);
+  font-family: 'Tajawal', sans-serif;
+  font-size: 15px; font-weight: 900;
+  cursor: pointer; transition: .18s;
+  background: linear-gradient(135deg, rgba(13,79,110,0.08), rgba(13,79,110,0.04));
+  color: #0d4f6e;
+  border: 1.5px solid rgba(13,79,110,0.18);
+  box-shadow: 0 2px 8px rgba(13,79,110,0.06);
+}
+.quick-btn:active {
+  background: linear-gradient(135deg, rgba(13,79,110,0.15), rgba(13,79,110,0.08));
+  transform: scale(.96);
+  box-shadow: 0 1px 4px rgba(13,79,110,0.1);
+}
+
+/* ── زر المزايدة الرئيسي ── */
+.btn-bid-submit {
+  background: linear-gradient(135deg, #0d4f6e, #0a3d5a) !important;
+  color: white !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: .5px;
+  box-shadow: 0 6px 20px rgba(13,79,110,0.35) !important;
+  border: none !important;
+}
+.btn-bid-submit:active {
+  transform: scale(.98);
+  box-shadow: 0 3px 10px rgba(13,79,110,0.3) !important;
+}
 .winner-card {
   background: linear-gradient(135deg, #fffdf5, #fef7e0);
   border: 2px solid rgba(232,201,122,0.4);
@@ -442,7 +560,7 @@ select.field-input { cursor: pointer; }
 .winner-name   { font-size: 24px; font-weight: 900; color: var(--text); margin-top: 8px; }
 .winner-phone  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 .winner-amt    {
-  font-size: 32px; font-weight: 900; color: var(--sage);
+  font-size: 32px; font-weight: 900; color: #0d4f6e;
   margin-top: 10px; font-family: 'Tajawal', sans-serif;
 }
 
@@ -1148,25 +1266,28 @@ select.field-input { cursor: pointer; }
 
 <!-- ████ SCREEN: BIDDER ████ -->
 <div class="screen" id="screen-bidder">
-  <div class="top-bar">
+  <div class="top-bar" style="background:linear-gradient(135deg,#0d4f6e,#0a3d5a);border-bottom:1px solid rgba(56,189,248,0.15)">
     <div class="top-bar-brand">
       <div class="top-bar-logo">
         <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
       </div>
       <div>
-        <div class="top-bar-title">مزايدة قعد الفلج</div>
-        <div class="top-bar-sub" id="bidder-user-label">—</div>
+        <div class="top-bar-title" style="color:white">مزايدة قعد الفلج</div>
+        <div class="top-bar-sub" id="bidder-user-label" style="color:rgba(125,211,252,0.75)">—</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <span class="date-chip" id="today-date"></span>
-      <button class="top-bar-action" onclick="bidderLogout()">خروج</button>
+      <span class="date-chip" id="today-date"
+        style="background:rgba(56,189,248,0.12);color:rgba(125,211,252,0.8);border:1px solid rgba(56,189,248,0.2)"></span>
+      <button class="top-bar-action" onclick="bidderLogout()"
+        style="color:rgba(125,211,252,0.8);border-color:rgba(56,189,248,0.25)">خروج</button>
     </div>
   </div>
   <div class="scroll-area">
 
     <!-- Auction Hero -->
     <div class="auction-hero">
+      <div class="wave-line"></div>
       <div class="hero-content">
         <div class="hero-plot-label">📍 الربع الحالي</div>
         <div class="hero-plot-name" id="bidder-item-name">في انتظار المزايدة...</div>
@@ -1204,26 +1325,22 @@ select.field-input { cursor: pointer; }
     </div>
 
     <!-- Quick Bids -->
-    <div class="card">
-      <div class="card-title">⚡ زيادة سريعة</div>
+    <div class="card" style="border:1.5px solid rgba(13,79,110,0.12);box-shadow:0 4px 20px rgba(13,79,110,0.08)">
+      <div class="card-title" style="color:#0d4f6e">⚡ زيادة سريعة</div>
       <div class="quick-grid">
         <button class="quick-btn" onclick="quickBid(0.2)">+0.2</button>
         <button class="quick-btn" onclick="quickBid(0.5)">+0.5</button>
         <button class="quick-btn" onclick="quickBid(1)">+1</button>
-        <!--
-        <button class="quick-btn" onclick="quickBid(1)">+1</button>
-        <button class="quick-btn" onclick="quickBid(2)">+2</button>
-        <button class="quick-btn" onclick="quickBid(5)">+5</button>
-        -->
       </div>
       <div class="divider-or">أو أدخل مبلغاً مخصصاً</div>
-      <div class="field" style="margin-top:12px;margin-bottom:12px">
+      <div class="field" style="margin-top:12px;margin-bottom:14px">
         <input class="field-input" id="bidder-amount" type="number" dir="ltr"
           placeholder="قيمة المزايدة (ر.ع)" min="0" step="0.001"
-          style="font-size:20px;text-align:center;font-weight:700">
+          style="font-size:20px;text-align:center;font-weight:700;
+                 border-color:rgba(13,79,110,0.2);background:rgba(13,79,110,0.03)">
       </div>
-      <button class="btn btn-gold" id="bid-submit-btn" onclick="submitBid()" disabled>
-        💰 مزايدة الآن
+      <button class="btn btn-bid-submit" id="bid-submit-btn" onclick="submitBid()" disabled>
+        🌊 مزايدة الآن
       </button>
     </div>
 
