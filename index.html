@@ -862,6 +862,129 @@ select.field-input { cursor: pointer; }
 /* ══════════════════════════════════════════
    MANUAL ENTRY MODAL
 ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   ADMIN DARK THEME
+══════════════════════════════════════════ */
+#screen-admin {
+  background: #f0f4f1;
+}
+#screen-admin .top-bar {
+  background: linear-gradient(135deg, #1e2d22 0%, #2a3d2e 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+#screen-admin .top-bar-title {
+  color: #e8f0ea;
+  font-size: 15px; font-weight: 900;
+}
+#screen-admin .top-bar-sub {
+  color: rgba(168,210,175,0.75);
+  font-size: 10px;
+}
+#screen-admin .top-bar-logo {
+  background: rgba(255,255,255,0.1);
+  border: 1.5px solid rgba(255,255,255,0.12);
+}
+#screen-admin .top-bar-action {
+  color: rgba(168,210,175,0.85);
+  border-color: rgba(168,210,175,0.25);
+  background: rgba(255,255,255,0.06);
+}
+#screen-admin .top-bar-action:active {
+  background: rgba(255,255,255,0.12);
+}
+#screen-admin .date-chip {
+  background: rgba(168,210,175,0.12);
+  color: rgba(168,210,175,0.8);
+  border: 1px solid rgba(168,210,175,0.2);
+  font-size: 10px; padding: 4px 10px; border-radius: 20px;
+}
+
+/* ── تبويبات المشرف ── */
+#screen-admin .tab-bar {
+  background: #253529;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+#screen-admin .tab-btn {
+  color: rgba(168,210,175,0.5);
+  border-bottom-color: transparent;
+  font-size: 9px;
+}
+#screen-admin .tab-btn:hover {
+  color: rgba(168,210,175,0.8);
+  background: rgba(255,255,255,0.04);
+}
+#screen-admin .tab-btn.active {
+  color: #a8d2af;
+  border-bottom-color: #6dba7d;
+  background: rgba(109,186,125,0.08);
+}
+#screen-admin .tab-icon { font-size: 16px; }
+
+/* ── بطاقات المشرف ── */
+#screen-admin .card {
+  background: #ffffff;
+  border: 1px solid #e2ebe4;
+  box-shadow: 0 2px 12px rgba(30,45,34,0.07);
+}
+#screen-admin .card-title {
+  color: #1e2d22;
+  font-size: 14px; font-weight: 900;
+}
+#screen-admin .admin-section {
+  background: #ffffff;
+  border: 1px solid #e2ebe4;
+  box-shadow: 0 2px 12px rgba(30,45,34,0.07);
+}
+#screen-admin .admin-section-title {
+  color: #2a5438;
+}
+
+/* ── أزرار المشرف أكثر حيوية ── */
+#screen-admin .btn-sage {
+  background: linear-gradient(135deg, #3a6b4a, #2d5439);
+  box-shadow: 0 4px 14px rgba(58,107,74,0.35);
+}
+#screen-admin .btn-sage:active { transform: scale(.97); }
+
+#screen-admin .btn-red {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+  box-shadow: 0 4px 14px rgba(192,57,43,0.35);
+}
+#screen-admin .btn-gold {
+  background: linear-gradient(135deg, #d4a017, #b8860b);
+  box-shadow: 0 4px 14px rgba(212,160,23,0.35);
+}
+#screen-admin .btn-water {
+  background: linear-gradient(135deg, #2980b9, #1f6391);
+  box-shadow: 0 4px 14px rgba(41,128,185,0.35);
+}
+#screen-admin .btn-ghost {
+  background: #f8faf8;
+  border: 1.5px solid #c8d8cc;
+  color: #2a5438;
+}
+#screen-admin .btn-ghost:active {
+  background: #edf4ef;
+}
+
+/* ── حقول الإدخال ── */
+#screen-admin .field-input {
+  border-color: #c8d8cc;
+  background: #fafcfa;
+}
+#screen-admin .field-input:focus {
+  border-color: #3a6b4a;
+  box-shadow: 0 0 0 3px rgba(58,107,74,0.1);
+}
+
+/* ── فاصل scroll-area ── */
+#screen-admin .scroll-area {
+  background: #f0f4f1;
+  padding: 16px 14px;
+}
+
 .tab-bar { grid-template-columns: repeat(6,1fr); }
 .tab-btn { font-size:9px; }
 </style>
@@ -1835,12 +1958,55 @@ select.field-input { cursor: pointer; }
 </div><!-- /screen-admin -->
 
 
-<!-- Audio -->
- <!--
-<audio id="bid-sound" preload="auto">
-  <source src="bid.mp3" type="audio/mpeg">
-</audio>
--->
+<!-- Audio — AudioContext (لا يحتاج ملف خارجي) -->
+<script>
+let _audioCtx = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return null; }
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+}
+
+function playTone(freq, startOffset, dur, vol) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    const t    = ctx.currentTime;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t + startOffset);
+    gain.gain.setValueAtTime(0, t + startOffset);
+    gain.gain.linearRampToValueAtTime(vol||0.35, t + startOffset + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + startOffset + dur);
+    osc.start(t + startOffset);
+    osc.stop(t  + startOffset + dur + 0.02);
+  } catch(e) {}
+}
+
+// صوت مزايدة جديدة — نبضتان صاعدتان
+function playBidSound() {
+  playTone(880,  0,    0.13);
+  playTone(1100, 0.15, 0.13);
+}
+
+// صوت بدء المزايدة — ثلاث نغمات تصاعدية
+function playStartSound() {
+  playTone(523, 0,    0.2, 0.4);
+  playTone(659, 0.2,  0.2, 0.4);
+  playTone(784, 0.4,  0.28, 0.45);
+}
+</script>
 <!-- ████████████████████████████████████████████████████████
      JAVASCRIPT
 ████████████████████████████████████████████████████████ -->
@@ -2166,6 +2332,8 @@ function recordAttendance(name, phone) {
   if (!attendanceRef) return;
   const key = String(phone).replace(/\D/g,'');
   attendanceRef.child(key).set({ name, phone, joinedAt: now() });
+  // تفعيل AudioContext عند تسجيل الحضور (تفاعل المستخدم)
+  unlockAudio();
 }
 
 /* ══════════════ AUCTION LISTENER ══════════════ */
@@ -2534,10 +2702,7 @@ function recordBidInHistory(amount, name, phone, plot) {
   });
 }
 
-function playBidSound() {
-  const s = document.getElementById('bid-sound');
-  if (s) { s.currentTime = 0; s.play().catch(() => {}); }
-}
+/* playBidSound و playStartSound مُعرَّفتان في قسم AudioContext أعلاه */
 
 /* ══════════════ ADMIN LOGIN ══════════════ */
 function adminLogin() {
@@ -2558,6 +2723,7 @@ function adminLogin() {
         loadBiddersList();
         listenPendingRequests();
         applyAssistantUI();
+        setTimeout(initCollapsedCards, 300);
       } else {
         showToast('❌ رمز المشرف غير صحيح', 'error');
       }
@@ -2577,6 +2743,7 @@ function adminLogin() {
           loadBiddersList();
           listenPendingRequests();
           applyAssistantUI();
+          setTimeout(initCollapsedCards, 300);
         });
       } else {
         showToast('❌ رمز المساعد غير صحيح', 'error');
@@ -2616,6 +2783,10 @@ function adminStartAuction() {
   const minStep = parseFloat(document.getElementById('a-min-step').value) || 0.5;
   const dur     = parseInt(document.getElementById('a-duration').value) || 240;
   const ext     = parseInt(document.getElementById('a-extend').value) || 30;
+
+  // تفعيل الصوت وتشغيل نغمة البدء
+  unlockAudio();
+  playStartSound();
 
   // تعطيل زر التالي أثناء المزايدة
   const btnNext = document.getElementById('btn-next');
@@ -3198,8 +3369,30 @@ function exportFinancePDF() {
 /* ══════════════════════════════════════════
    TOGGLE: ATTENDANCE & ITEMS
 ══════════════════════════════════════════ */
-let attVisible = true, itemsVisible = true;
+let attVisible = false, itemsVisible = false;
 const cardVisState = {};
+
+function initCollapsedCards() {
+  // إخفاء جميع البطاقات التي تحتوي toggle-body عند فتح التطبيق
+  document.querySelectorAll('[id^="toggle-body-"]').forEach(body => {
+    const id  = body.id.replace('toggle-body-', '');
+    const btn = document.getElementById('toggle-btn-' + id);
+    body.style.display  = 'none';
+    cardVisState[id]    = false;
+    if (btn) btn.textContent = 'إظهار ▼';
+  });
+  // إخفاء قائمة المزايدين
+  const attList = document.getElementById('admin-attendance-list');
+  const attBtn  = document.getElementById('att-toggle-btn');
+  if (attList) attList.style.display = 'none';
+  if (attBtn)  attBtn.textContent    = 'إظهار ▼';
+
+  // إخفاء قائمة الربوع
+  const itemsWrapper = document.getElementById('items-list-wrapper');
+  const itemsBtn     = document.getElementById('items-toggle-btn');
+  if (itemsWrapper) itemsWrapper.style.display = 'none';
+  if (itemsBtn)     itemsBtn.textContent        = 'إظهار ▼';
+}
 
 function toggleAttendance() {
   attVisible = !attVisible;
