@@ -1450,10 +1450,10 @@ select.field-input { cursor: pointer; }
         </div>
       </div>
       <div class="ctrl-grid">
-        <button class="btn btn-sage" onclick="adminStartAuction()" data-perm="auction">▶ بدء المزايدة</button>
-        <button class="btn btn-ghost" onclick="adminAddTime()" data-perm="auction">+1 دقيقة</button>
-        <button class="btn btn-gold" onclick="adminNextItem()" data-perm="auction">التالي ⏭</button>
-        <button class="btn btn-red" onclick="adminStopAuction()" data-perm="auction">⏹ إيقاف</button>
+        <button class="btn btn-sage" id="btn-start" onclick="adminStartAuction()" data-perm="auction">▶ بدء المزايدة</button>
+        <button class="btn btn-red"  id="btn-stop"  onclick="adminStopAuction()"  data-perm="auction">⏹ إيقاف</button>
+        <button class="btn btn-gold" id="btn-next"  onclick="adminNextItem()"     data-perm="auction">التالي ⏭</button>
+        <button class="btn btn-ghost"               onclick="adminAddTime()"      data-perm="auction">+1 دقيقة</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-ghost btn-sm" onclick="openModal('modal-reset')" data-perm="auction">🔄 إعادة ضبط</button>
@@ -2077,6 +2077,14 @@ function loadItems() {
       </div>`;
     });
     if (itemsList) itemsList.innerHTML = listHtml || '<div class="empty-state">لا توجد ربوع</div>';
+
+    // إذا لم يكن هناك ربع محدد حالياً — اختر الأول تلقائياً
+    if (select && auctionSequence.length) {
+      const currentVal = select.value;
+      if (!currentVal || !auctionSequence.includes(currentVal)) {
+        select.value = auctionSequence[0];
+      }
+    }
   });
 }
 
@@ -2608,6 +2616,18 @@ function adminStartAuction() {
   const minStep = parseFloat(document.getElementById('a-min-step').value) || 0.5;
   const dur     = parseInt(document.getElementById('a-duration').value) || 240;
   const ext     = parseInt(document.getElementById('a-extend').value) || 30;
+
+  // تعطيل زر التالي أثناء المزايدة
+  const btnNext = document.getElementById('btn-next');
+  if (btnNext) { btnNext.disabled = true; btnNext.style.opacity = '0.4'; }
+
+  // تعيين currentIndex على الربع الحالي في القائمة
+  const plotIdx = auctionSequence.indexOf(plot);
+  if (plotIdx !== -1) {
+    currentIndex = plotIdx;
+    sequenceRef.set({ index: plotIdx });
+  }
+
   auctionRef.set({
     plot, minStep, extend: ext,
     currentBid: null, currentBidder: null, currentBidderPhone: null,
@@ -2617,7 +2637,12 @@ function adminStartAuction() {
 
 function adminStopAuction() {
   if (!isAdmin || !currentData) return;
-  auctionRef.update({ status: 'ended' }).then(() => showToast('⏹ تم إيقاف المزايدة', 'warn'));
+  auctionRef.update({ status: 'ended' }).then(() => {
+    showToast('⏹ تم إيقاف المزايدة', 'warn');
+    // تفعيل زر التالي بعد الإيقاف
+    const btnNext = document.getElementById('btn-next');
+    if (btnNext) { btnNext.disabled = false; btnNext.style.opacity = ''; }
+  });
 }
 
 function saveWinnerToHistory() {
@@ -2652,10 +2677,11 @@ function adminNextItem() {
   const source = auctionSequence.length ? auctionSequence : [];
   if (!source.length) { showToast('لا توجد ربوع مضافة', 'error'); return; }
   if (currentIndex >= source.length - 1) { showToast('انتهت جميع الربوع لهذا اليوم ✅', 'success'); return; }
-  const newIdx = currentIndex + 1;
+  const newIdx  = currentIndex + 1;
+  currentIndex  = newIdx;
   sequenceRef.set({ index: newIdx });
   const nextPlot = source[newIdx];
-  const select = document.getElementById('a-plot');
+  const select   = document.getElementById('a-plot');
   if (select) select.value = nextPlot;
   showToast('📍 تم اختيار: ' + nextPlot, 'success');
 }
@@ -2688,8 +2714,20 @@ window.adminNewDay = async function() {
   try {
     await auctionRef.remove();
     if (attendanceRef) await attendanceRef.remove();
-    if (sequenceRef) await sequenceRef.set({ index: -1 });
-    if (bidsRef) await bidsRef.remove();
+    if (sequenceRef)   await sequenceRef.set({ index: -1 });
+    if (bidsRef)       await bidsRef.remove();
+
+    // تعيين أول ربع في حقل الربع تلقائياً
+    currentIndex = -1;
+    if (auctionSequence.length) {
+      const select = document.getElementById('a-plot');
+      if (select) select.value = auctionSequence[0];
+    }
+
+    // تفعيل زر التالي (قد يكون معطلاً من جلسة سابقة)
+    const btnNext = document.getElementById('btn-next');
+    if (btnNext) { btnNext.disabled = false; btnNext.style.opacity = ''; }
+
     showToast('✅ تم بدء يوم مزايدة جديد', 'success');
   } catch(e) { showToast('❌ حدث خطأ', 'error'); }
 };
@@ -3795,21 +3833,42 @@ function applyAssistantUI() {
    MANUAL FINANCE ENTRY
 ══════════════════════════════════════════ */
 function openManualEntryModal() {
-  /* تعبئة قائمة الربوع */
-  const plotSel = document.getElementById('manual-plot');
-  plotSel.innerHTML = '';
-  auctionSequence.forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name; opt.textContent = name;
-    plotSel.appendChild(opt);
-  });
-  if (!auctionSequence.length) {
-    plotSel.innerHTML = '<option value="">لا توجد ربوع مضافة</option>';
-  }
-
-  /* تعبئة قائمة المزايدين */
+  const plotSel   = document.getElementById('manual-plot');
   const bidderSel = document.getElementById('manual-bidder');
+
+  plotSel.innerHTML   = '<option value="">جاري التحميل...</option>';
   bidderSel.innerHTML = '<option value="">جاري التحميل...</option>';
+
+  const today = getTodayKey();
+
+  // نجلب history لمعرفة الربوع المُرساة اليوم
+  db.ref('history').once('value', snap => {
+    const histData = snap.val() || {};
+
+    // الربوع المُرساة اليوم (مزايدة عادية أو يدوي)
+    const awardedToday = new Set(
+      Object.values(histData)
+        .filter(item => item.confirmed && (item.dateKey === today))
+        .map(item => item.plot)
+        .filter(Boolean)
+    );
+
+    // الربوع المتبقية = كل الربوع ناقص المُرساة اليوم
+    const remaining = auctionSequence.filter(name => !awardedToday.has(name));
+
+    plotSel.innerHTML = '';
+    if (remaining.length) {
+      remaining.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        plotSel.appendChild(opt);
+      });
+    } else {
+      plotSel.innerHTML = '<option value="">✅ جميع الربوع تم إرساؤها اليوم</option>';
+    }
+  });
+
+  // تعبئة قائمة المزايدين
   biddersRef.once('value', snap => {
     const data = snap.val();
     if (!data) { bidderSel.innerHTML = '<option value="">لا يوجد مزايدون</option>'; return; }
@@ -3822,12 +3881,8 @@ function openManualEntryModal() {
     });
   });
 
-  /* تاريخ اليوم افتراضياً */
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm   = String(today.getMonth()+1).padStart(2,'0');
-  const dd   = String(today.getDate()).padStart(2,'0');
-  document.getElementById('manual-date').value = `${yyyy}-${mm}-${dd}`;
+  // تاريخ اليوم افتراضياً
+  document.getElementById('manual-date').value  = today;
   document.getElementById('manual-amount').value = '';
 
   openModal('modal-manual-entry');
