@@ -733,7 +733,7 @@ select.field-input { cursor: pointer; }
 }
 @keyframes modalIn { from{opacity:0;transform:scale(.9) translateY(15px)} to{opacity:1;transform:none} }
 .modal-title { font-size: 18px; font-weight: 900; color: var(--sage); margin-bottom: 8px; }
-.modal-msg   { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.7; }
+.modal-msg   { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.7; white-space: pre-line; }
 .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
 .modal-icon  { font-size: 44px; text-align: center; margin-bottom: 14px; }
 
@@ -1830,7 +1830,7 @@ select.field-input { cursor: pointer; }
       </div>
       <div class="field">
         <label class="field-label">تصفية حسب المزايد</label>
-        <select class="field-input" id="search-fin-name" onchange="loadFinanceData()">
+        <select class="field-input" id="search-fin-name" onchange="selectedFinanceKeys.clear(); loadFinanceData()">
           <option value="">— عرض الجميع —</option>
         </select>
       </div>
@@ -1841,6 +1841,7 @@ select.field-input { cursor: pointer; }
       <table class="fin-table">
         <thead>
           <tr>
+            <th style="width:34px"><input type="checkbox" id="fin-select-all" onchange="toggleSelectAllFinance(this)" style="width:16px;height:16px;cursor:pointer"></th>
             <th>التاريخ</th>
             <th>الربع</th>
             <th>المزايد</th>
@@ -1851,9 +1852,19 @@ select.field-input { cursor: pointer; }
           </tr>
         </thead>
         <tbody id="finance-body">
-          <tr><td colspan="7" style="padding:24px;color:var(--text-muted)">لا توجد سجلات</td></tr>
+          <tr><td colspan="8" style="padding:24px;color:var(--text-muted)">لا توجد سجلات</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- شريط الإجراء الجماعي -->
+    <div id="fin-bulk-bar" style="display:none;position:sticky;bottom:14px;margin-top:12px;
+         background:var(--sage);color:var(--white);border-radius:var(--r);
+         padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+         flex-wrap:wrap;gap:10px;box-shadow:0 8px 24px rgba(58,107,74,0.3);z-index:50">
+      <div style="font-size:13px;font-weight:800" id="fin-bulk-label">تم تحديد 0 بند — الإجمالي 0.000 ر.ع</div>
+      <button class="btn" style="background:var(--white);color:var(--sage);padding:8px 18px;font-size:12px;width:auto"
+        onclick="clearSelectedFinance()">✅ إبراء ذمة المحدد</button>
     </div>
 
   </div><!-- /tab-finance -->
@@ -3133,7 +3144,9 @@ function loadFinanceData() {
   db.ref('history').on('value', snap => {
     const data = snap.val();
     if (!data) {
-      body.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات مالية</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات مالية</td></tr>';
+      financeRowsData = {};
+      updateFinanceBulkBar();
       return;
     }
 
@@ -3144,6 +3157,8 @@ function loadFinanceData() {
     updateBiddersList(active);
 
     let html = '', totalRemaining = 0;
+    financeRowsData = {}; // إعادة بناء مخزن السجلات الظاهرة
+
     Object.entries(active).forEach(([key, item]) => {
       if (!item.winner) return;
       if (selectedName && item.winner !== selectedName) return;
@@ -3159,7 +3174,18 @@ function loadFinanceData() {
         ? '<span style="font-size:10px;background:#dff0f9;color:var(--water);border-radius:8px;padding:2px 6px;font-weight:800">يدوي</span>'
         : '';
 
+      // نخزن بيانات السجل للاستخدام في الإبراء الجماعي
+      financeRowsData[key] = {
+        winner: item.winner, phone: item.phone||'',
+        plot: item.plot||'—', amount, paid, remaining
+      };
+
+      const checkedAttr = selectedFinanceKeys.has(key) ? 'checked' : '';
+      const rowDisabled = remaining <= 0 ? 'disabled' : '';
+
       html += `<tr>
+        <td><input type="checkbox" class="fin-row-check" data-key="${key}" ${checkedAttr} ${rowDisabled}
+            onchange="toggleFinanceRow('${key}',this)" style="width:16px;height:16px;cursor:pointer"></td>
         <td>${dateStr}</td>
         <td>${item.plot||'—'} ${typeTag}</td>
         <td>${item.winner}</td>
@@ -3172,11 +3198,24 @@ function loadFinanceData() {
       </tr>`;
     });
 
-    body.innerHTML = html || '<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات غير مسددة</td></tr>';
+    body.innerHTML = html || '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text-muted)">لا توجد سجلات غير مسددة</td></tr>';
     if (summary) {
       summary.textContent = `إجمالي المستحقات: ${totalRemaining.toFixed(3)} ر.ع`;
       summary.style.display = totalRemaining > 0 ? 'block' : 'none';
     }
+
+    // تنظيف التحديد من السجلات التي لم تعد ظاهرة (مثلاً تم إبراؤها)
+    Array.from(selectedFinanceKeys).forEach(k => {
+      if (!financeRowsData[k]) selectedFinanceKeys.delete(k);
+    });
+    // إعادة ضبط "تحديد الكل" — يُعاد تقييمه تلقائياً عند الإعادة
+    const selectAllCb = document.getElementById('fin-select-all');
+    if (selectAllCb) {
+      const allKeys = Object.keys(financeRowsData);
+      const allSelected = allKeys.length > 0 && allKeys.every(k => selectedFinanceKeys.has(k) || financeRowsData[k].remaining <= 0);
+      selectAllCb.checked = allSelected;
+    }
+    updateFinanceBulkBar();
   });
 }
 
@@ -3190,6 +3229,102 @@ function updateBiddersList(data) {
     opts += `<option value="${n}" ${cur===n?'selected':''}>${n}</option>`;
   });
   select.innerHTML = opts;
+}
+
+/* ══════════════════════════════════════════
+   BULK CLEARANCE — إبراء ذمة المحدد
+══════════════════════════════════════════ */
+let financeRowsData    = {};        // key -> {winner, phone, plot, amount, paid, remaining}
+let selectedFinanceKeys = new Set(); // مفاتيح السجلات المحددة بالـ checkbox
+
+function toggleFinanceRow(key, checkbox) {
+  if (checkbox.checked) selectedFinanceKeys.add(key);
+  else selectedFinanceKeys.delete(key);
+  updateFinanceBulkBar();
+}
+
+function toggleSelectAllFinance(checkbox) {
+  const checked = checkbox.checked;
+  document.querySelectorAll('.fin-row-check').forEach(cb => {
+    if (cb.disabled) return; // لا نحدد السجلات المسددة بالكامل (remaining=0)
+    cb.checked = checked;
+    const key = cb.dataset.key;
+    if (checked) selectedFinanceKeys.add(key);
+    else selectedFinanceKeys.delete(key);
+  });
+  updateFinanceBulkBar();
+}
+
+function updateFinanceBulkBar() {
+  const bar   = document.getElementById('fin-bulk-bar');
+  const label = document.getElementById('fin-bulk-label');
+  if (!bar || !label) return;
+
+  const items = Array.from(selectedFinanceKeys)
+    .map(k => financeRowsData[k])
+    .filter(Boolean);
+
+  if (!items.length) {
+    bar.style.display = 'none';
+    return;
+  }
+  const total = items.reduce((s,it) => s + it.remaining, 0);
+  label.textContent = `تم تحديد ${items.length} بند — الإجمالي ${total.toFixed(3)} ر.ع`;
+  bar.style.display = 'flex';
+}
+
+/* إبراء ذمة جميع السجلات المحددة (كل أو بعض المستحقات) */
+function clearSelectedFinance() {
+  const items = Array.from(selectedFinanceKeys)
+    .map(k => ({ key: k, ...financeRowsData[k] }))
+    .filter(it => it && it.remaining > 0);
+
+  if (!items.length) { showToast('لم يتم تحديد أي سجل', 'warn'); return; }
+
+  // تأكد أن جميع السجلات المحددة لنفس المزايد (لأجل رسالة واتساب واحدة)
+  const distinctWinners = new Set(items.map(it => it.winner));
+  const total = items.reduce((s,it) => s + it.remaining, 0);
+
+  let msg;
+  if (distinctWinners.size === 1) {
+    const winner = items[0].winner;
+    const list = items.map(it => `• ${it.plot}: ${it.remaining.toFixed(3)} ر.ع`).join('\n');
+    msg = `هل تريد إبراء ذمة (${winner}) عن ${items.length} بند بإجمالي ${total.toFixed(3)} ر.ع؟\n\n${list}`;
+  } else {
+    msg = `هل تريد إبراء ذمة ${items.length} بند من ${distinctWinners.size} مزايدين بإجمالي ${total.toFixed(3)} ر.ع؟\n\n(ملاحظة: رسالة الواتساب الجماعية تعمل فقط عند اختيار سجلات مزايد واحد)`;
+  }
+
+  showConfirmWithWhatsapp(
+    'إبراء ذمة المحدد',
+    msg,
+    () => {
+      // تحديث جماعي عبر update() واحد
+      const updates = {};
+      items.forEach(it => {
+        updates[`history/${it.key}/paidAmount`] = it.amount;
+        updates[`history/${it.key}/cleared`]    = true;
+      });
+      db.ref().update(updates).then(() => {
+        selectedFinanceKeys.clear();
+        showToast(`✅ تم إبراء ذمة ${items.length} بند`, 'success');
+      }).catch(() => showToast('❌ خطأ في الحفظ', 'error'));
+    },
+    () => {
+      if (distinctWinners.size !== 1) {
+        showToast('الرسالة الجماعية تعمل لمزايد واحد فقط — حدد سجلات مزايد واحد', 'warn');
+        return;
+      }
+      sendBulkClearanceWhatsapp(items[0].winner, items[0].phone, items, total);
+    },
+    'نعم، إبراء الكل'
+  );
+}
+
+function sendBulkClearanceWhatsapp(winner, phone, items, total) {
+  if (!phone) { showToast('لا يوجد رقم هاتف لهذا المزايد', 'warn'); return; }
+  const list = items.map(it => `- ربع ${it.plot}: ${it.remaining.toFixed(3)} ر.ع`).join('\n');
+  const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${winner||''} 👋\n\nنشكركم على وفائكم بسداد كامل مستحقاتكم في منصة قعد فلج بطين 🌴:\n${list}\n\nالإجمالي المسدد: *${total.toFixed(3)} ر.ع*\n\nبارك الله فيكم وجزاكم خيراً على حسن تعاملكم. 🤝`;
+  openWhatsapp(phone, msg);
 }
 
 function updatePaidAmount(key, newPaid, total) {
@@ -3312,8 +3447,11 @@ function exportFinancePDF() {
 
   let rowsHtml = '';
   Array.from(body.rows).forEach(row => {
+    // إذا كانت رسالة "لا توجد سجلات" (خلية واحدة فقط) — نتجاهلها
+    if (row.cells.length < 8) return;
     let rd = '';
-    for (let i = 0; i < 6; i++) {
+    // نبدأ من العمود 1 (نتجاوز عمود التحديد) وحتى 6 (التاريخ..المتبقي)
+    for (let i = 1; i <= 6; i++) {
       const inp = row.cells[i]?.querySelector('input');
       rd += `<td style="border:1px solid #eee;padding:9px">${inp ? Number(inp.value).toFixed(3) : (row.cells[i]?.innerText||'')}</td>`;
     }
