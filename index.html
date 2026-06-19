@@ -2129,51 +2129,61 @@ function doInitFirebase() {
     }
 
     // استرجاع جلسة المشرف أو المساعد عند إعادة التحميل
-    const adminSession = sessionStorage.getItem('admin_session');
-    if (adminSession) {
-      try {
-        const parsed = JSON.parse(adminSession);
-        if (parsed.type === 'admin') {
-          // تحقق أن الرمز لا يزال صالحاً
-          const snap = await db.ref('adminCode').once('value');
-          const stored = snap.val() || DEFAULT_CODE;
-          if (parsed.code === stored) {
-            isAdmin = true; isAssistant = false; assistantPerms = {};
-            goScreen('screen-admin');
-            adminTab('auction');
-            loadBiddersList();
-            listenPendingRequests();
-            applyAssistantUI();
-            setTimeout(initCollapsedCards, 300);
-            showToast('✅ تم استعادة جلسة المشرف', 'success');
-            return;
-          }
-        } else if (parsed.type === 'assistant') {
-          const snapA = await db.ref('settings/assistantCode').once('value');
-          if (parsed.code === snapA.val()) {
-            isAdmin = false; isAssistant = true;
-            const snapP = await db.ref('settings/assistantPermissions').once('value');
-            assistantPerms = snapP.val() || {};
-            goScreen('screen-admin');
-            adminTab('auction');
-            loadBiddersList();
-            listenPendingRequests();
-            applyAssistantUI();
-            setTimeout(initCollapsedCards, 300);
-            showToast('👋 تم استعادة جلسة المساعد', 'success');
-            return;
-          }
-        }
-        // الرمز تغيّر — احذف الجلسة
-        sessionStorage.removeItem('admin_session');
-      } catch(e) {
-        sessionStorage.removeItem('admin_session');
-      }
-    }
-
-    goScreen('screen-role');
+    restoreAdminSession();
   } catch(e) {
     showToast('تعذّر الاتصال بالخادم', 'error');
+    goScreen('screen-role');
+  }
+}
+
+function restoreAdminSession() {
+  const adminSession = sessionStorage.getItem('admin_session');
+  if (!adminSession) { goScreen('screen-role'); return; }
+
+  let parsed;
+  try { parsed = JSON.parse(adminSession); }
+  catch(e) { sessionStorage.removeItem('admin_session'); goScreen('screen-role'); return; }
+
+  if (parsed.type === 'admin') {
+    db.ref('adminCode').once('value').then(snap => {
+      const stored = snap.val() || DEFAULT_CODE;
+      if (parsed.code === stored) {
+        isAdmin = true; isAssistant = false; assistantPerms = {};
+        goScreen('screen-admin');
+        adminTab('auction');
+        loadBiddersList();
+        listenPendingRequests();
+        applyAssistantUI();
+        setTimeout(initCollapsedCards, 300);
+        showToast('✅ تم استعادة جلسة المشرف', 'success');
+      } else {
+        sessionStorage.removeItem('admin_session');
+        goScreen('screen-role');
+      }
+    }).catch(() => { sessionStorage.removeItem('admin_session'); goScreen('screen-role'); });
+
+  } else if (parsed.type === 'assistant') {
+    db.ref('settings/assistantCode').once('value').then(snapA => {
+      if (parsed.code !== snapA.val()) {
+        sessionStorage.removeItem('admin_session');
+        goScreen('screen-role');
+        return;
+      }
+      return db.ref('settings/assistantPermissions').once('value').then(snapP => {
+        isAdmin = false; isAssistant = true;
+        assistantPerms = snapP.val() || {};
+        goScreen('screen-admin');
+        adminTab('auction');
+        loadBiddersList();
+        listenPendingRequests();
+        applyAssistantUI();
+        setTimeout(initCollapsedCards, 300);
+        showToast('👋 تم استعادة جلسة المساعد', 'success');
+      });
+    }).catch(() => { sessionStorage.removeItem('admin_session'); goScreen('screen-role'); });
+
+  } else {
+    sessionStorage.removeItem('admin_session');
     goScreen('screen-role');
   }
 }
