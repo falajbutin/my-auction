@@ -4481,14 +4481,27 @@ function saveManualEntry() {
   db.ref('history').child(key).set({
     plot, winner, phone, amount,
     timestamp,
-    dateKey: dateVal,      // حفظ التاريخ صريحاً بدون تحويل
+    dateKey: dateVal,
     paidAmount: 0,
-    confirmed:  true,      // ← يحمي السجل في السجل السنوي
+    confirmed:  true,
     isManual:   true
   }).then(() => {
     closeModal('modal-manual-entry');
     showToast('✅ تم حفظ الإدخال اليدوي', 'success');
     if (document.getElementById('tab-finance').style.display !== 'none') loadFinanceData();
+
+    // إرسال رسالة واتساب للمزايد إن كان رقمه متاحاً
+    if (phone) {
+      const dateLabel = new Date(timestamp).toLocaleDateString('ar-OM', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      const msg =
+        `السلام عليكم ورحمة الله وبركاته،\n` +
+        `أخي الكريم: ${winner} 👋\n\n` +
+        `لقد تم التسجيل اليدوي بإسمكم لربع (${plot}) بتاريخ (${dateLabel}) بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
+        `يرجى التواصل مع وكيل الفلج لإتمام الدفع. 🌴`;
+      setTimeout(() => openWhatsapp(phone, msg), 600);
+    }
   }).catch(() => showToast('خطأ في الحفظ', 'error'));
 }
 
