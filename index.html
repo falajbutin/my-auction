@@ -107,6 +107,7 @@ html, body {
   direction: rtl;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;   /* ← منع Pull-to-Refresh */
 }
 
 /* ══════ SCREENS ══════ */
@@ -2106,7 +2107,7 @@ function doInitFirebase() {
     loadQuickBids();
     loadAssistantCode();
 
-    // Check existing session
+    // Check existing bidder session
     const session = localStorage.getItem('user_session');
     if (session) {
       const parsed = JSON.parse(session);
@@ -2126,6 +2127,50 @@ function doInitFirebase() {
       }).catch(() => { goScreen('screen-role'); });
       return;
     }
+
+    // استرجاع جلسة المشرف أو المساعد عند إعادة التحميل
+    const adminSession = sessionStorage.getItem('admin_session');
+    if (adminSession) {
+      try {
+        const parsed = JSON.parse(adminSession);
+        if (parsed.type === 'admin') {
+          // تحقق أن الرمز لا يزال صالحاً
+          const snap = await db.ref('adminCode').once('value');
+          const stored = snap.val() || DEFAULT_CODE;
+          if (parsed.code === stored) {
+            isAdmin = true; isAssistant = false; assistantPerms = {};
+            goScreen('screen-admin');
+            adminTab('auction');
+            loadBiddersList();
+            listenPendingRequests();
+            applyAssistantUI();
+            setTimeout(initCollapsedCards, 300);
+            showToast('✅ تم استعادة جلسة المشرف', 'success');
+            return;
+          }
+        } else if (parsed.type === 'assistant') {
+          const snapA = await db.ref('settings/assistantCode').once('value');
+          if (parsed.code === snapA.val()) {
+            isAdmin = false; isAssistant = true;
+            const snapP = await db.ref('settings/assistantPermissions').once('value');
+            assistantPerms = snapP.val() || {};
+            goScreen('screen-admin');
+            adminTab('auction');
+            loadBiddersList();
+            listenPendingRequests();
+            applyAssistantUI();
+            setTimeout(initCollapsedCards, 300);
+            showToast('👋 تم استعادة جلسة المساعد', 'success');
+            return;
+          }
+        }
+        // الرمز تغيّر — احذف الجلسة
+        sessionStorage.removeItem('admin_session');
+      } catch(e) {
+        sessionStorage.removeItem('admin_session');
+      }
+    }
+
     goScreen('screen-role');
   } catch(e) {
     showToast('تعذّر الاتصال بالخادم', 'error');
@@ -2687,7 +2732,19 @@ function doPlaceBid(amount, name, phone) {
     cur.currentBidder = name;
     cur.currentBidderPhone = phone;
     const extMs = (cur.extend || 30) * 1000;
-    cur.endsAt = Math.max(cur.endsAt||safeNow, safeNow + extMs);
+    // إصلاح العداد: نأخذ أكبر قيمة بين:
+    // - الوقت المتبقي الحالي + التمديد (إذا كان الوقت لا يزال أكبر)
+    // - الآن + التمديد (إذا انتهى الوقت أو قارب)
+    // هذا يضمن دائماً إضافة مدة التمديد كاملة بغض النظر عن التأخير
+    const currentEndsAt = cur.endsAt || safeNow;
+    const remainingMs   = currentEndsAt - safeNow;
+    if (remainingMs > extMs) {
+      // الوقت المتبقي أكبر من التمديد — لا داعي للتمديد
+      // (مزايدة في بداية الجلسة)
+    } else {
+      // وقت قليل متبقي — نُمدِّد من الآن
+      cur.endsAt = safeNow + extMs;
+    }
     return cur;
   }, (err, committed, snap) => {
     if (err) {
@@ -2728,6 +2785,8 @@ function adminLogin() {
       if (code.trim() === String(stored).trim()) {
         isAdmin = true; isAssistant = false; assistantPerms = {};
         document.getElementById('admin-code-input').value = '';
+        // حفظ جلسة المشرف للاستعادة عند إعادة التحميل
+        sessionStorage.setItem('admin_session', JSON.stringify({ type:'admin', code: code.trim() }));
         showToast('مرحباً بك يا مشرف ✅', 'success');
         goScreen('screen-admin');
         adminTab('auction');
@@ -2748,6 +2807,8 @@ function adminLogin() {
         document.getElementById('admin-code-input').value = '';
         db.ref('settings/assistantPermissions').once('value', snapP => {
           assistantPerms = snapP.val() || {};
+          // حفظ جلسة المساعد للاستعادة عند إعادة التحميل
+          sessionStorage.setItem('admin_session', JSON.stringify({ type:'assistant', code: code.trim() }));
           showToast('مرحباً بك يا مساعد 👋', 'success');
           goScreen('screen-admin');
           adminTab('auction');
@@ -2765,6 +2826,7 @@ function adminLogin() {
 
 function adminLogout() {
   isAdmin = false; isAssistant = false; assistantPerms = {};
+  sessionStorage.removeItem('admin_session'); // مسح الجلسة عند الخروج الإرادي
   goScreen('screen-role');
 }
 
@@ -3182,6 +3244,11 @@ function loadFinanceData() {
 
       const checkedAttr = selectedFinanceKeys.has(key) ? 'checked' : '';
       const rowDisabled = remaining <= 0 ? 'disabled' : '';
+      const editBtn = item.isManual
+        ? `<button onclick="editManualEntry('${key}')"
+            style="background:none;border:none;color:var(--water);cursor:pointer;font-size:18px;padding:3px"
+            title="تعديل">✏️</button>`
+        : '';
 
       html += `<tr>
         <td><input type="checkbox" class="fin-row-check" data-key="${key}" ${checkedAttr} ${rowDisabled}
@@ -3193,8 +3260,12 @@ function loadFinanceData() {
         <td><input class="fin-paid-input" type="number" value="${paid.toFixed(3)}" step="0.001"
             onchange="updatePaidAmount('${key}',this.value,${amount})"></td>
         <td class="${remaining>0?'fin-rem-pos':'fin-rem-zero'}">${remaining.toFixed(3)}</td>
-        <td><button onclick="deleteFinanceRecord('${key}','${(item.winner||'').replace(/'/g,'`')}','${(item.plot||'').replace(/'/g,'`')}')"
-            style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:3px">🗑️</button></td>
+        <td style="white-space:nowrap">
+          ${editBtn}
+          <button onclick="deleteFinanceRecord('${key}','${(item.winner||'').replace(/'/g,'`')}','${(item.plot||'').replace(/'/g,'`')}')"
+              style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:3px"
+              title="${item.isManual?'حذف/إبراء':'إبراء الذمة'}">🗑️</button>
+        </td>
       </tr>`;
     });
 
@@ -3357,19 +3428,177 @@ function updatePaidAmount(key, newPaid, total) {
 function deleteFinanceRecord(key, winner, plot) {
   db.ref('history/'+key).once('value').then(snap => {
     const item = snap.val() || {};
+
+    if (item.isManual) {
+      // إدخال يدوي — نعرض نافذة بخيارين
+      showManualDeleteChoice(key, winner, plot, item);
+    } else {
+      // سجل مزايدة عادية — إبراء ذمة فقط
+      showConfirmWithWhatsapp(
+        'تأكيد الاستلام',
+        `هل تأكد استلام المبلغ من (${winner}) عن (${plot})؟`,
+        () => {
+          db.ref('history/'+key).update({
+            paidAmount: item.amount || 0,
+            cleared: true
+          }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
+        },
+        () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount),
+        'نعم، تم الاستلام'
+      );
+    }
+  });
+}
+
+/* تعديل إدخال يدوي موجود */
+function editManualEntry(key) {
+  db.ref('history/'+key).once('value').then(snap => {
+    const item = snap.val();
+    if (!item || !item.isManual) return;
+
+    // تعبئة قائمة الربوع (نُضمّن الربع الحالي حتى لو تم إرساؤه)
+    const plotSel = document.getElementById('manual-plot');
+    plotSel.innerHTML = '';
+    const allPlots = new Set([...auctionSequence, item.plot]);
+    allPlots.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      if (name === item.plot) opt.selected = true;
+      plotSel.appendChild(opt);
+    });
+
+    // تعبئة قائمة المزايدين
+    const bidderSel = document.getElementById('manual-bidder');
+    bidderSel.innerHTML = '<option value="">جاري التحميل...</option>';
+    biddersRef.once('value', bSnap => {
+      const bData = bSnap.val();
+      bidderSel.innerHTML = '';
+      if (bData) {
+        Object.entries(bData).forEach(([k, b]) => {
+          const opt = document.createElement('option');
+          opt.value = b.name; opt.dataset.phone = b.phone || k;
+          opt.textContent = b.name;
+          if (b.name === item.winner) opt.selected = true;
+          bidderSel.appendChild(opt);
+        });
+      }
+    });
+
+    // تعبئة باقي الحقول
+    document.getElementById('manual-amount').value = Number(item.amount||0).toFixed(3);
+    document.getElementById('manual-date').value   = item.dateKey || '';
+
+    // تغيير زر الحفظ ليحفظ على نفس السجل
+    const saveBtn = document.querySelector('#modal-manual-entry .btn-sage');
+    const origOnclick = saveBtn.getAttribute('onclick');
+    saveBtn.setAttribute('onclick', `saveManualEntryEdit('${key}')`);
+    saveBtn.textContent = '💾 حفظ التعديل';
+
+    // عند إغلاق النافذة نُعيد الزر لحالته الأصلية
+    const closeBtn = document.querySelector('#modal-manual-entry .btn-ghost');
+    const origClose = closeBtn.getAttribute('onclick');
+    closeBtn.setAttribute('onclick', `restoreManualEntryBtn();${origClose}`);
+
+    openModal('modal-manual-entry');
+  });
+}
+
+function saveManualEntryEdit(key) {
+  const plotSel   = document.getElementById('manual-plot');
+  const bidderSel = document.getElementById('manual-bidder');
+  const amount    = parseFloat(document.getElementById('manual-amount').value);
+  const dateVal   = document.getElementById('manual-date').value;
+  const plot      = plotSel.value;
+  const winner    = bidderSel.value;
+  const phone     = bidderSel.selectedOptions[0]?.dataset.phone || '';
+
+  if (!plot)   { showToast('اختر الربع', 'error'); return; }
+  if (!winner) { showToast('اختر المزايد', 'error'); return; }
+  if (isNaN(amount) || amount <= 0) { showToast('أدخل مبلغاً صحيحاً', 'error'); return; }
+  if (!dateVal) { showToast('اختر التاريخ', 'error'); return; }
+
+  const [y,m,d] = dateVal.split('-').map(Number);
+  const timestamp = new Date(y, m-1, d, 12, 0, 0).getTime();
+
+  db.ref('history/'+key).update({
+    plot, winner, phone, amount, timestamp, dateKey: dateVal
+  }).then(() => {
+    restoreManualEntryBtn();
+    closeModal('modal-manual-entry');
+    showToast('✅ تم تعديل الإدخال', 'success');
+  }).catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+function restoreManualEntryBtn() {
+  const saveBtn  = document.querySelector('#modal-manual-entry .btn-sage');
+  const closeBtn = document.querySelector('#modal-manual-entry .btn-ghost');
+  if (saveBtn)  { saveBtn.setAttribute('onclick','saveManualEntry()'); saveBtn.textContent = '💾 حفظ'; }
+  if (closeBtn) closeBtn.setAttribute('onclick', "closeModal('modal-manual-entry')");
+}
+function showManualDeleteChoice(key, winner, plot, item) {
+  const amount = Number(item.amount||0);
+
+  // نبني modal مؤقت بخيارين
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'display:flex;z-index:9999';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:340px">
+      <div class="modal-icon">📋</div>
+      <div class="modal-title">إدخال يدوي — اختر الإجراء</div>
+      <div class="modal-msg" style="text-align:right">
+        <strong>${winner}</strong> — ${plot}<br>
+        المبلغ: <strong>${amount.toFixed(3)} ر.ع</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <button class="btn btn-sage" id="mdc-clear" style="width:100%">
+          ✅ إبراء الذمة — تم السداد
+          <div style="font-size:10px;opacity:.75;font-weight:500;margin-top:3px">يبقى في السجل السنوي</div>
+        </button>
+        <button class="btn btn-red" id="mdc-delete" style="width:100%">
+          🗑️ حذف الإدخال الخاطئ
+          <div style="font-size:10px;opacity:.75;font-weight:500;margin-top:3px">يُحذف نهائياً من جميع السجلات</div>
+        </button>
+        <button class="btn btn-ghost" id="mdc-cancel" style="width:100%">إلغاء</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#mdc-clear').onclick = () => {
+    document.body.removeChild(overlay);
+    // إبراء ذمة — مع واتساب
     showConfirmWithWhatsapp(
-      'تأكيد الاستلام',
+      'تأكيد إبراء الذمة',
       `هل تأكد استلام المبلغ من (${winner}) عن (${plot})؟`,
       () => {
         db.ref('history/'+key).update({
-          paidAmount: item.amount || 0,
+          paidAmount: amount,
           cleared: true
         }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
       },
-      () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount),
+      () => sendClearanceWhatsapp(winner, item.phone, plot, amount),
       'نعم، تم الاستلام'
     );
-  });
+  };
+
+  overlay.querySelector('#mdc-delete').onclick = () => {
+    document.body.removeChild(overlay);
+    // حذف نهائي مع تحذير
+    showConfirm(
+      '⚠️ تأكيد الحذف النهائي',
+      `سيتم حذف (${plot} — ${winner}) نهائياً من السجل المالي والتقرير اليومي. هذا الإجراء لا يمكن التراجع عنه.`,
+      () => {
+        db.ref('history/'+key).remove()
+          .then(() => showToast('🗑️ تم حذف الإدخال نهائياً', 'warn'));
+      },
+      'نعم، احذف نهائياً'
+    );
+  };
+
+  overlay.querySelector('#mdc-cancel').onclick = () => {
+    document.body.removeChild(overlay);
+  };
 }
 
 function sendClearanceWhatsapp(winner, phone, plot, amount) {
