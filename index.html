@@ -369,14 +369,14 @@ select.field-input { cursor: pointer; }
     #041e2f 100%
   );
   border-radius: var(--r-xl);
-  padding: 32px 22px 28px;
-  margin-bottom: 14px;
+  padding: 18px 18px 14px;
+  margin-bottom: 10px;
   color: var(--white);
   text-align: center;
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 20px 60px rgba(5,50,90,0.45),
+    0 12px 36px rgba(5,50,90,0.35),
     0 0 0 1px rgba(255,255,255,0.06) inset;
 }
 /* موجة علوية */
@@ -424,35 +424,35 @@ select.field-input { cursor: pointer; }
   border-radius: 20px; margin-bottom: 10px;
 }
 .hero-plot-name {
-  font-size: 24px; font-weight: 900; color: var(--white);
-  margin-bottom: 22px; letter-spacing: .3px;
+  font-size: 18px; font-weight: 900; color: var(--white);
+  margin-bottom: 12px; letter-spacing: .3px;
   text-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 .hero-bid-label {
-  font-size: 10px; font-weight: 700;
+  font-size: 9px; font-weight: 700;
   color: rgba(125,211,252,0.6);
-  letter-spacing: 1.5px; margin-bottom: 6px;
+  letter-spacing: 1.5px; margin-bottom: 4px;
   text-transform: uppercase;
 }
 .hero-amount {
-  font-size: 58px; font-weight: 900;
+  font-size: 42px; font-weight: 900;
   color: #fbbf24;
   line-height: 1; font-family: 'Tajawal', sans-serif;
   letter-spacing: -2px;
   transition: transform .3s, color .3s;
   text-shadow:
-    0 0 30px rgba(251,191,36,0.4),
-    0 4px 16px rgba(0,0,0,0.3);
+    0 0 20px rgba(251,191,36,0.35),
+    0 3px 10px rgba(0,0,0,0.25);
 }
 .hero-currency {
-  font-size: 13px; font-weight: 600;
+  font-size: 11px; font-weight: 600;
   color: rgba(125,211,252,0.5);
-  margin-top: 4px; letter-spacing: .5px;
+  margin-top: 2px; letter-spacing: .5px;
 }
 .hero-bidder {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255,255,255,.55);
-  margin-top: 12px;
+  margin-top: 8px;
 }
 .hero-bidder strong {
   color: rgba(125,211,252,0.9);
@@ -460,21 +460,21 @@ select.field-input { cursor: pointer; }
 }
 .hero-min-pill {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 700;
-  padding: 5px 14px; margin-top: 10px;
+  font-size: 10px; font-weight: 700;
+  padding: 4px 12px; margin-top: 6px;
   background: rgba(56,189,248,0.1);
   border: 1px solid rgba(56,189,248,0.2);
   border-radius: 20px;
   color: rgba(125,211,252,0.8);
 }
 .hero-timer {
-  font-size: 42px; font-weight: 900;
-  letter-spacing: 4px; margin: 18px 0 12px;
+  font-size: 34px; font-weight: 900;
+  letter-spacing: 3px; margin: 12px 0 8px;
   color: var(--white);
   font-family: 'Tajawal', sans-serif;
   text-shadow:
-    0 0 20px rgba(125,211,252,0.3),
-    0 2px 8px rgba(0,0,0,0.3);
+    0 0 14px rgba(125,211,252,0.25),
+    0 2px 6px rgba(0,0,0,0.25);
 }
 .hero-timer.urgent {
   color: #fca5a5;
@@ -550,19 +550,19 @@ select.field-input { cursor: pointer; }
 .winner-card {
   background: linear-gradient(135deg, #fffdf5, #fef7e0);
   border: 2px solid rgba(232,201,122,0.4);
-  border-radius: var(--r-xl); padding: 24px;
-  text-align: center; margin-bottom: 14px;
-  box-shadow: 0 6px 28px rgba(184,137,58,0.15);
-  display: none; animation: winnerIn .5s cubic-bezier(.34,1.56,.64,1);
+  border-radius: var(--r-xl); padding: 14px 18px;
+  text-align: center; margin-bottom: 10px;
+  box-shadow: 0 4px 18px rgba(184,137,58,0.12);
+  display: none; animation: winnerIn .4s cubic-bezier(.34,1.56,.64,1);
 }
-@keyframes winnerIn { from{opacity:0;transform:scale(.9) translateY(10px)} to{opacity:1;transform:none} }
-.winner-trophy { font-size: 52px; margin-bottom: 10px; }
-.winner-label  { font-size: 11px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
-.winner-name   { font-size: 24px; font-weight: 900; color: var(--text); margin-top: 8px; }
-.winner-phone  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+@keyframes winnerIn { from{opacity:0;transform:scale(.95) translateY(6px)} to{opacity:1;transform:none} }
+.winner-trophy { font-size: 32px; margin-bottom: 4px; }
+.winner-label  { font-size: 10px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+.winner-name   { font-size: 18px; font-weight: 900; color: var(--text); margin-top: 4px; }
+.winner-phone  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .winner-amt    {
-  font-size: 32px; font-weight: 900; color: #0d4f6e;
-  margin-top: 10px; font-family: 'Tajawal', sans-serif;
+  font-size: 24px; font-weight: 900; color: #0d4f6e;
+  margin-top: 6px; font-family: 'Tajawal', sans-serif;
 }
 
 /* ══════════════════════════════════════════
@@ -1055,11 +1055,11 @@ select.field-input { cursor: pointer; }
 
 <!-- Confirm -->
 <div class="modal-overlay" id="modal-confirm">
-  <div class="modal-box">
+  <div class="modal-box" style="max-height:80vh;display:flex;flex-direction:column">
     <div class="modal-icon">⚠️</div>
     <div class="modal-title" id="confirm-title">تأكيد</div>
-    <div class="modal-msg" id="confirm-msg"></div>
-    <div class="modal-actions">
+    <div class="modal-msg" id="confirm-msg" style="overflow-y:auto;flex:1;max-height:45vh"></div>
+    <div class="modal-actions" style="flex-shrink:0">
       <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
       <button class="btn btn-sage" id="confirm-yes">تأكيد</button>
     </div>
@@ -1543,8 +1543,7 @@ select.field-input { cursor: pointer; }
       <div class="winner-amt" id="aw-amt">—</div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:4px">ريال عُماني</div>
       <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
-        <button class="btn btn-whatsapp btn-sm" onclick="adminWhatsapp()">📱 تهنئة بالواتساب</button>
-        <button class="btn btn-sage btn-sm" onclick="saveWinnerToHistory()">💾 حفظ النتيجة</button>
+        <button class="btn btn-sage btn-sm" onclick="saveWinnerAndNotify()">💾 حفظ وإرسال تهنئة</button>
       </div>
     </div>
 
@@ -1560,13 +1559,13 @@ select.field-input { cursor: pointer; }
         </div>
         <div class="field">
           <label class="field-label">الحد الأدنى للزيادة (ر.ع)</label>
-          <input class="field-input" id="a-min-step" type="number" value="0.5" min="0.1" step="0.1" dir="ltr">
+          <input class="field-input" id="a-min-step" type="number" value="0.2" min="0.1" step="0.1" dir="ltr">
         </div>
       </div>
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label class="field-label">مدة المزايدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="240" min="30" dir="ltr">
+          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr">
         </div>
         <div class="field">
           <label class="field-label">تمديد تلقائي (ثانية)</label>
@@ -2899,20 +2898,36 @@ function adminStopAuction() {
   });
 }
 
-function saveWinnerToHistory() {
-  if (!currentData || !currentData.currentBidder) { showToast('لا يوجد فائز لحفظه', 'error'); return; }
-  const key = Date.now().toString();
+function saveWinnerAndNotify() {
+  if (!currentData || !currentData.currentBidder) {
+    showToast('لا يوجد فائز لحفظه', 'error'); return;
+  }
+  const key     = Date.now().toString();
   const dateKey = getTodayKey();
+  const winner  = currentData.currentBidder;
+  const phone   = currentData.currentBidderPhone || '';
+  const plot    = currentData.plot || '';
+  const amount  = currentData.currentBid || 0;
+
   db.ref('history').child(key).set({
-    plot:      currentData.plot || '',
-    winner:    currentData.currentBidder || '',
-    phone:     currentData.currentBidderPhone || '',
-    amount:    currentData.currentBid || 0,
-    timestamp: Date.now(),
-    dateKey,
-    paidAmount: 0,
-    confirmed:  true   // ← يحمي السجل في السجل السنوي
-  }).then(() => showToast('✅ تم حفظ نتيجة المزايدة في السجل', 'success'));
+    plot, winner, phone, amount,
+    timestamp: Date.now(), dateKey,
+    paidAmount: 0, confirmed: true
+  }).then(() => {
+    showToast('✅ تم حفظ النتيجة', 'success');
+    // إرسال واتساب بعد الحفظ مباشرةً
+    if (phone) {
+      const msg =
+        `نبارك لك الفوز بمزايدة ربع (${plot}) بتاريخ (${dateKey}) ` +
+        `بقيمة (${Number(amount).toFixed(3)} ر.ع) 🎉\n` +
+        `يرجى التواصل مع وكيل الفلج لإتمام الدفع. 🌴`;
+      setTimeout(() => openWhatsapp(phone, msg), 400);
+    }
+  }).catch(() => showToast('خطأ في الحفظ', 'error'));
+}
+
+function saveWinnerToHistory() {
+  saveWinnerAndNotify(); // الدالة القديمة تُعيد التوجيه للجديدة
 }
 
 function adminReset() {
@@ -3617,37 +3632,28 @@ function sendClearanceWhatsapp(winner, phone, plot, amount) {
   openWhatsapp(phone, msg);
 }
 
-/* نافذة تأكيد مع زر واتساب منفصل */
+/* نافذة تأكيد مع إرسال واتساب مدمج */
 function showConfirmWithWhatsapp(title, msg, onYes, onWhatsapp, yesLabel='تأكيد') {
   setText('confirm-title', title);
   setText('confirm-msg', msg);
   setText('confirm-yes', yesLabel);
 
-  // نضيف زر واتساب مؤقت في نافذة التأكيد
-  const actions = document.querySelector('#modal-confirm .modal-actions');
   // إزالة أي زر واتساب قديم
   const oldWa = document.getElementById('confirm-whatsapp-btn');
   if (oldWa) oldWa.remove();
 
-  const waBtn = document.createElement('button');
-  waBtn.id = 'confirm-whatsapp-btn';
-  waBtn.className = 'btn btn-whatsapp';
-  waBtn.style.cssText = 'padding:12px 16px;font-size:13px;width:auto;border-radius:var(--r-sm)';
-  waBtn.innerHTML = '📱 إرسال شكر واتساب';
-  waBtn.onclick = () => { onWhatsapp(); };
-  actions.insertBefore(waBtn, actions.firstChild);
-
+  // الزر الرئيسي يُنفِّذ الإبراء ثم يفتح الواتساب تلقائياً
   document.getElementById('confirm-yes').onclick = () => {
     closeConfirm();
-    // تنظيف زر واتساب
     const w = document.getElementById('confirm-whatsapp-btn');
     if (w) w.remove();
     onYes();
+    // بعد تنفيذ الإبراء نفتح واتساب تلقائياً
+    setTimeout(() => { if (onWhatsapp) onWhatsapp(); }, 600);
   };
 
-  // عند الإلغاء نظّف الزر
+  // زر إلغاء فقط
   const cancelBtn = document.querySelector('#modal-confirm .btn-ghost');
-  const origCancel = cancelBtn.onclick;
   cancelBtn.onclick = () => {
     closeConfirm();
     const w = document.getElementById('confirm-whatsapp-btn');
@@ -4498,7 +4504,7 @@ function saveManualEntry() {
       const msg =
         `السلام عليكم ورحمة الله وبركاته،\n` +
         `أخي الكريم: ${winner} 👋\n\n` +
-        `لقد تم التسجيل اليدوي بإسمكم لربع (${plot}) بتاريخ (${dateLabel}) بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
+        `لقد تم التسجيل اليدوي بإسمكم لربع (${plot}) ليوم القعد بتاريخ (${dateLabel}) بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
         `يرجى التواصل مع وكيل الفلج لإتمام الدفع. 🌴`;
       setTimeout(() => openWhatsapp(phone, msg), 600);
     }
